@@ -1,2 +1,1 @@
 print("AAAAAAAAAAAAAAA")
-print("EXPLOSIONN")
