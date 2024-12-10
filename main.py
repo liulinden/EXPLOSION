@@ -27,6 +27,9 @@ def toPolar(x,y):
 def toComponents(angle,r):
     return r*math.cos(angle), r*math.sin(angle)
 
+def getIntersection(seg1,seg2):
+    ...
+
 #ground class
 class Ground:
     def __init__(self, color, y):
@@ -59,17 +62,29 @@ class Polygon:
         self.vertices = []
         for vertex in shape:
             self.vertices.append([vertex[0]+x,vertex[1]+y])
-        
+
         #velocities (x,y,angle)
-        self.xVel = -4 #4
+        self.xVel = 5+-1*len(shape) #4
         self.yVel = -10
-        self.aVel = 6*math.pi/180
+        self.aVel = -8*math.pi/180
 
         self.forces= []
 
         #temporary
         self.rotate(2)
+
+        self.rect=pygame.Rect(0,0,10,10)
+        self.updateRect()
     
+    def updateRect(self):
+        minx, maxx,miny,maxy=self.vertices[0][0],self.vertices[0][0],self.vertices[0][1],self.vertices[0][1]
+        for vertex in self.vertices:
+            minx=min(minx,vertex[0])
+            miny=min(miny,vertex[1])
+            maxx=max(maxx,vertex[0])
+            maxy=max(maxy,vertex[1])
+        self.rect=pygame.Rect(minx,miny,maxx-minx,maxy-miny)
+
     def draw(self, surface):
         pygame.draw.polygon(surface, self.color, self.vertices)
 
@@ -79,6 +94,7 @@ class Polygon:
 
     #return list of collisions, with collisions given as [vector of collider speed, point of contact, angle at contact]
     def checkCollisions(self, colliders):
+        self.updateRect()
         collisions = []
         for collider in colliders:
 
@@ -98,8 +114,19 @@ class Polygon:
                 
                 #polygon collision case
                 elif collider.type == "polygon":
-                    ...
-                    
+                    if self.rect.colliderect(collider.rect):
+                        for i in range(len(self.vertices)):
+                            if i==0:
+                                segment1=[self.vertices[len(self.vertices)-1],self.vertices[0]]
+                            else:
+                                segment1=[self.vertices[i-1],self.vertices[i]]
+                            for j in range(len(collider.vertices)):
+                                if j==0:
+                                    segment2=[collider.vertices[len(collider.vertices)-1],collider.vertices[0]]
+                                else:
+                                    segment2=[collider.vertices[j-1],collider.vertices[j]]
+                                intersect=getIntersection(segment1,segment2)
+
         return collisions
     
     #move by dx dy, ignoring physics and stuff
@@ -143,8 +170,10 @@ class Polygon:
                 dx,dy=toComponents(refAngle,dirComp)
                 xAcc+=dx
                 yAcc+=dy
-                aAcc+=tanComp*lever/1000
-        print(xAcc,yAcc, aAcc)
+                #print(dirComp, tanComp)
+
+                aAcc+=tanComp*lever/1500
+        #print(xAcc,yAcc, aAcc)
         
         #apply net force
         self.xVel+=xAcc
@@ -156,6 +185,7 @@ class Polygon:
 
         #move
         steps = max(magnitude(self.xVel, self.yVel)/10,self.aVel/0.1)
+        stepSize = magnitude(self.xVel, self.yVel)/steps
         if steps > 0:
             #be wary of getting stuck between stuff,
             xStep = self.xVel/steps
@@ -168,14 +198,15 @@ class Polygon:
                 self.rotate(aStep)
                 collisions=self.checkCollisions(shapes+ground)
                 if len(collisions) > 0:
-                    for i in range(10):
-                        dx,dy=toComponents(collisions[0][2],1)
+                    for i in range(20):
+                        dx,dy=toComponents(collisions[0][2],stepSize/10)
                         self.move(dx,dy)
                         collisions=self.checkCollisions(shapes+ground)
                         if len(collisions)==0:
                             break
                     if len(collisions)>0:
-                        self.move(-10*dx-xStep,-10*dy-yStep)
+                        print("womp")
+                        self.move(-20*dx-xStep,-20*dy-yStep)
                         self.rotate(-aStep)
                         steps=0.9
                         break
@@ -193,7 +224,11 @@ class Polygon:
                     speed,contact,angle=collision
 
                     #temporary
-                    self.forces.append((0,-2,contact[0]-self.x,contact[1]-self.y))
+                    a,r=toPolar(xAcc,yAcc)
+                    normalMag=math.cos(a-angle)*r
+                    x,y=toComponents(-angle,normalMag)
+                    #print(x,y)
+                    self.forces.append((x,y,contact[0]-self.x,contact[1]-self.y))
 
         """
         stepSize = 10
@@ -240,6 +275,8 @@ class Polygon:
         self.yVel=self.y-initY
         self.aVel=self.angle-initA
 
+        self.updateRect()
+
             
 
 
@@ -272,7 +309,7 @@ GRAVITY = (0,2,0,0)
 
 lines=[]
 ground = [Ground((50,50,50), 600)]
-shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),4,50,SCREENWIDTH/2,100)]
+shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100)]
 running = True
  
 while running:
@@ -290,4 +327,4 @@ while running:
         ground[0].draw(w)
         
         pygame.display.flip()
-        c.tick(60)
+        c.tick(30)
