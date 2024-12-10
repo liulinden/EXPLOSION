@@ -173,6 +173,8 @@ class Polygon:
                 #print(dirComp, tanComp)
 
                 aAcc+=tanComp*lever/1500
+                if len(self.vertices)==3:
+                    print(tanComp)
         #print(xAcc,yAcc, aAcc)
         
         #apply net force
@@ -184,7 +186,9 @@ class Polygon:
         self.forces = [GRAVITY]
 
         #move
-        steps = max(magnitude(self.xVel, self.yVel)/10,self.aVel/0.1)
+        steps = max(magnitude(self.xVel, self.yVel)/10,abs(self.aVel)/0.01)
+        if len(self.vertices)==3:
+            print(steps,self.aVel)
         stepSize = magnitude(self.xVel, self.yVel)/steps
         if steps > 0:
             #be wary of getting stuck between stuff,
@@ -271,9 +275,11 @@ class Polygon:
                     """
 
         #self.rotate(10*math.pi/180)
+        print("avel,1", self.aVel)
         self.xVel=self.x-initX
         self.yVel=self.y-initY
         self.aVel=self.angle-initA
+        print(self.aVel)
 
         self.updateRect()
 
@@ -323,8 +329,8 @@ while running:
         for shape in shapes:
             shape.tick()
             shape.draw(w)
-            shape.drawForces(w)
+            #shape.drawForces(w)
         ground[0].draw(w)
         
         pygame.display.flip()
-        c.tick(30)
+        c.tick(60)
