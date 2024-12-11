@@ -55,7 +55,6 @@ class Polygon:
         self.mass=1000
 
         #find center of mass and set self.x and self.y accordingly
-        ...
 
 
         #coordinates of vertices on window
@@ -313,11 +312,48 @@ w.fill((255,255,255))
 #constants
 GRAVITY = (0,2,0,0)
 
+
+
+def createRandomPolygon(color, minSides, maxSides):
+
+    center_x = SCREENWIDTH/2
+    center_y = SCREENHEIGHT/2
+
+    radius = random.randint(50, 100)
+    sides = random.randint(minSides, maxSides)
+
+    points = []
+
+    for i in range(sides):
+        #generate random angle 
+        angle = random.uniform(0, 6.28319)
+        distance = random.uniform(radius/2, radius)
+
+        x = center_x + distance * math.cos(angle)
+        y = center_y + distance * math.sin(angle)
+        
+        points.append((x, y))
+
+    points.sort()
+    print(points)
+
+    shape=points
+
+    return Polygon(color, shape)
+
+
 lines=[]
 ground = [Ground((50,50,50), 600)]
-shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100)]
+shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(), 3, 10)]
 running = True
  
+def findArea():
+    pass
+
+def centerOfMass():
+    #find center of mass of a shape
+    pass
+
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -334,3 +370,4 @@ while running:
         
         pygame.display.flip()
         c.tick(60)
+
