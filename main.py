@@ -58,15 +58,27 @@ def getIntersection(seg1,seg2, segment=True):
             
     return ["none"]
 
-
-print(getIntersection([[3,2],[-5,3]],[[0,0],[5,5]]))
+#get positional velocities at angle
+def angVelToPos(radius, angle, aVel):
+    mag=radius*aVel
+    dx=mag*(-math.sin(angle))
+    dy=mag*(math.cos(angle))
+    return dx,dy
 
 #ground class
 class Ground:
     def __init__(self, color, y):
+        global id
+        self.id=id
+        id+=1
         self.type = "ground"
         self.color= color
         self.y = y
+        self.x = 0
+        self.xVel=0
+        self.yVel=0
+        self.aVel=0
+        self.mass=-1
     
     def draw(self, w):
         pygame.draw.rect(w, self.color, pygame.Rect(0,self.y,w.get_width(),w.get_height()-self.y))
@@ -74,8 +86,11 @@ class Ground:
 #polygon class
 class Polygon:
     def __init__(self, color, shape, x=0, y=0):
+        global id
         
         self.type = "polygon"
+        self.id = id
+        id+=1
 
         self.color = color
 
@@ -86,8 +101,8 @@ class Polygon:
 
 
         #should be calculated, currently not used
-        self.mass=1000
-        self.inertia=1000
+        self.mass=1
+        self.inertia=1600
 
         #find center of mass and set self.x and self.y accordingly
         ...
@@ -117,6 +132,11 @@ class Polygon:
         for vertex in self.vertices:
             self.radius=max(self.radius,magnitude(vertex[0]-self.x,vertex[1]-self.y))
     
+    #get velocities at point on shape
+    def getPointVel(self,x,y):
+        ax,ay = angVelToPos(magnitude(y-self.x,x-self.x),math.atan2(y-self.y,x-self.x),self.aVel)
+        return ax+self.xVel,ay+self.yVel
+
     def updateRect(self):
         minx, maxx,miny,maxy=self.vertices[0][0],self.vertices[0][0],self.vertices[0][1],self.vertices[0][1]
         for vertex in self.vertices:
@@ -131,9 +151,9 @@ class Polygon:
 
     def drawForces(self,surface):
         for force in self.forces:
-            pygame.draw.line(surface,(0,0,0),(self.x+force[2],self.y+force[3]),(self.x+force[2]+10*force[0],self.y+force[3]+10*force[1]))
+            pygame.draw.line(surface,(0,0,0),(self.x+force[3],self.y+force[4]),(self.x+force[3]+10*force[1],self.y+force[4]+10*force[2]))
 
-    #return list of collisions, with collisions given as [vector of collider speed, point of contact, angle at contact]
+    #return list of collisions, with collisions given as [collider object, point of contact, normal angle at contact]
     def checkCollisions(self, colliders):
         self.updateRect()
         collisions = []
@@ -151,7 +171,7 @@ class Polygon:
                             xContactsSum+=vertex[0]
                             nContacts+=1
                     if nContacts>0:
-                        collisions.append([[0,0],[xContactsSum/nContacts,collider.y],-math.pi/2])
+                        collisions.append([collider,[xContactsSum/nContacts,collider.y],-math.pi/2])
                 
                 #polygon collision case
                 elif collider.type == "polygon":
@@ -170,6 +190,11 @@ class Polygon:
 
         return collisions
     
+    #move by dx dy and rotate by da, ignoring physics
+    def transform(self, dx,dy,da):
+        self.move(dx,dy)
+        self.rotate(da)
+    
     #move by dx dy, ignoring physics and stuff
     def move(self, dx, dy):
         self.x+=dx
@@ -178,7 +203,7 @@ class Polygon:
             vertex[0]+=dx
             vertex[1]+=dy
     
-    #rotate by da degrees, ignoring physics
+    #rotate by da, ignoring physics
     def rotate(self, da):
         self.angle+=da
         for vertex in self.vertices:
@@ -188,6 +213,122 @@ class Polygon:
             x,y=toComponents(a+da,r)
             vertex[0]=x+self.x
             vertex[1]=y+self.y
+
+    #applyForces
+    def applyForces(self):
+        xAcc=0
+        yAcc=0
+        aAcc=0
+        for force in self.forces:
+            if force[3]==0 and force[4]==0:
+                xAcc+=force[1]/self.mass
+                yAcc+=force[2]/self.mass
+            else:
+                refAngle,lever=toPolar(force[3],force[4])
+                a,r=toPolar(force[1],force[2])
+                dirComp,tanComp = toComponents(a-refAngle,r)
+                dx,dy=toComponents(refAngle,dirComp)
+                xAcc+=dx/self.mass
+                yAcc+=dy/self.mass
+                aAcc+=tanComp*lever/self.inertia
+        print(xAcc,yAcc,aAcc,self.forces)
+        self.xVel+=xAcc
+        self.yVel+=yAcc
+        self.aVel+=aAcc
+
+
+    #apply force
+    def addForce(self, id, xForce, yForce, xLoc, yLoc):
+        for i in range(len(self.forces)):
+            if self.forces[i][0]==id:
+                self.forces[i]=[id,xForce,yForce,xLoc,yLoc]
+                return
+        self.forces.append([id,xForce, yForce, xLoc, yLoc])
+
+    #setup for tick
+    def tickStart(self):
+        self.forces = [(0,0,GRAVITY*self.mass,0,0)]
+
+    #move one frame
+    def tickMove(self):
+        
+        maxStepSize=1
+
+        #break down movement
+        maxDistance = self.radius+magnitude(self.xVel,self.yVel)
+        steps=math.ceil(maxDistance/maxStepSize)
+
+        if steps==0:
+            return
+
+        xStep=self.xVel/steps
+        yStep=self.yVel/steps
+        aStep=self.aVel/steps
+        print(self.xVel,self.yVel, self.aVel)
+        #take steps
+        while steps > 0:
+            steps-=1
+
+            self.transform(xStep,yStep,aStep)
+
+            #check for collisions
+            collisions=self.checkCollisions(shapes+ground)
+            if len(collisions) > 0:
+                for i in range(10):
+                    self.transform(-xStep/10,-yStep/10,-aStep/10)
+                    collisions=self.checkCollisions(shapes+ground)
+                    if len(collisions)==0:
+                        break
+                    
+                self.transform(xStep/10,yStep/10,aStep/10)
+                collisions=self.checkCollisions(shapes+ground)
+                self.transform(-xStep/10,-yStep/10,-aStep/10)
+                
+                #update forces
+                for collision in collisions:
+                    collider, contact, angle = collision
+
+                    #get net velocities at point of contact
+                    colliderXVel, colliderYVel = 0, 0
+                    if collider.type=="polygon":
+                        colliderXVel, colliderYVel = collider.getPointVel(contact[0],contact[1])
+                    netXVel, netYVel = self.getPointVel(contact[0],contact[1])
+                    print("vel:", netXVel, netYVel)
+
+                    #isolate relevant velocities
+                    a,r=toPolar(netXVel, netYVel)
+                    netVel, trash = toComponents(a-angle,r)
+                    a,r=toPolar(colliderXVel, colliderYVel)
+                    colliderVel, trash = toComponents(a-angle,r)
+
+                    #calculate force\
+                    # inelastic collision
+                    if collider.mass==-1:
+                        force = self.mass*(netVel-colliderVel)
+                    else:
+                        force = self.mass*collider.mass*(netVel-colliderVel)/(self.mass+collider.mass)
+                    forceX, forceY = toComponents(angle,force)
+                    #add forces
+                    self.addForce(str(collider.id)+'N',-forceX,-forceY,contact[0]-self.x,contact[1]-self.y)
+                    if collider.type=="polygon":
+                        collider.addForce(str(self.id)+'N',forceX,forceY,contact[0]-collider.x,contact[1]-collider.y)
+                break
+                    
+                    
+
+
+
+                    
+
+
+                
+
+                
+                
+
+
+            
+
 
     #frame actions
     def tick(self):
@@ -342,14 +483,15 @@ SCREENHEIGHT = 700
 w = pygame.display.set_mode([SCREENWIDTH,SCREENHEIGHT])
 c = pygame.time.Clock()
 w.fill((255,255,255))
+id=1
 
 #constants
-GRAVITY = (0,2,0,0)
+GRAVITY = 2
 
 lines=[]
 ground = [Ground((50,50,50), 600)]
 #Polygon((200,50,50),[[-70,10],[10,10],[10,50],[50,50],[50,-30],[-70,-30]],SCREENWIDTH/2,SCREENHEIGHT/2), 
-shapes = [createRegularShape(randomColor(),4,50,SCREENWIDTH/2,SCREENHEIGHT/2)]#,createRegularShape(randomColor(),4,50,SCREENWIDTH/2,100)]
+shapes = [createRegularShape(randomColor(),random.randint(3,7),50,SCREENWIDTH/2,SCREENHEIGHT/2)]#,createRegularShape(randomColor(),4,50,SCREENWIDTH/2,100)]
 running = True
  
 while running:
@@ -359,12 +501,24 @@ while running:
             running = False
     if running:
         w.fill((255,255,255))
-        lines = []
+
         for shape in shapes:
-            shape.tick()
+            shape.tickStart()
+        
+        
+        
+
+        for shape in shapes:
+            shape.tickMove()
+        
+        for shape in shapes:
+            shape.applyForces()
+            print(shape.forces)
+        
+        for shape in shapes:
             shape.draw(w)
             shape.drawForces(w)
         ground[0].draw(w)
         
         pygame.display.flip()
-        c.tick(60)
+        c.tick(10)
