@@ -163,7 +163,8 @@ class Polygon:
 
                 aAcc+=tanComp*lever/1500
                 if len(self.vertices)==3:
-                    print(tanComp)
+                    #print(tanComp)
+                    pass
         #print(xAcc,yAcc, aAcc)
         
         #apply net force
@@ -176,8 +177,8 @@ class Polygon:
 
         #move
         steps = max(magnitude(self.xVel, self.yVel)/10,abs(self.aVel)/0.01)
-        if len(self.vertices)==3:
-            print(steps,self.aVel)
+        # if len(self.vertices)==3:
+        #     print(steps,self.aVel)
         stepSize = magnitude(self.xVel, self.yVel)/steps
         if steps > 0:
             #be wary of getting stuck between stuff,
@@ -264,29 +265,47 @@ class Polygon:
                     """
 
         #self.rotate(10*math.pi/180)
-        print("avel,1", self.aVel)
+        # print("avel,1", self.aVel)
         self.xVel=self.x-initX
         self.yVel=self.y-initY
         self.aVel=self.angle-initA
-        print(self.aVel)
+        # print(self.aVel)
 
         self.updateRect()
 
     def drawShadow(self, surface, light_source):
-        shadow_vertices = []
-        for vertex in self.vertices:
-            lx, ly = light_source
-            vx, vy = vertex
-            dx, dy = vx - lx, vy - ly
-            shadow_length = 1000  # big number
-            shadow_end = (vx + dx * shadow_length, vy + dy * shadow_length)
-            shadow_vertices.append(shadow_end)
+        shadow_color = (50, 50, 50)
+        shadow_length = 10  # Arbitrary long shadow length
+        lx, ly = light_source  # Light source position
 
-        shadow_polygon = self.vertices + shadow_vertices[::-1]
-        shadow_color = (0, 0, 0, 188)
-        s = pygame.Surface(surface.get_size(), pygame.SRCALPHA)
-        pygame.draw.polygon(s, shadow_color, shadow_polygon)
-        surface.blit(s, (0, 0))
+        # List to hold the extended shadow points
+        shadow_vertices = []
+
+        # Loop through each edge of the polygon
+        for i in range(len(self.vertices)):
+            # Get the current vertex and the next vertex
+            current_vertex = self.vertices[i]
+            next_vertex = self.vertices[(i + 1) % len(self.vertices)]
+
+            # Calculate the direction of the shadow for each vertex
+            dx1, dy1 = current_vertex[0] - lx, current_vertex[1] - ly
+            dx2, dy2 = next_vertex[0] - lx, next_vertex[1] - ly
+
+            # Project the vertices far away to simulate the shadow
+            shadow_v1 = (current_vertex[0] + dx1 * shadow_length, current_vertex[1] + dy1 * shadow_length)
+            shadow_v2 = (next_vertex[0] + dx2 * shadow_length, next_vertex[1] + dy2 * shadow_length)
+
+            # Add the original and projected shadow points
+            shadow_vertices.append(current_vertex)
+            shadow_vertices.append(next_vertex)
+            shadow_vertices.append(shadow_v2)
+            shadow_vertices.append(shadow_v1)
+
+            # Close and fill the shadow polygon
+            pygame.draw.polygon(surface, shadow_color, [current_vertex, next_vertex, shadow_v2, shadow_v1])
+
+        
+        
 
 
     def draw(self, surface):
@@ -335,19 +354,24 @@ while running:
         # Define light source position
         light_source = (SCREENWIDTH - 100, 100)
 
-        # Draw shadows first
-        for shape in shapes:
-            shape.drawShadow(w, light_source)
-
+        
         # Draw shapes and ground
         for shape in shapes:
             shape.tick()
+
+        # Draw shadows  first
+        
+        for shape in shapes:
+            shape.drawShadow(w, light_source)
+
+
+        for shape in shapes:
             shape.draw(w)
 
         ground[0].draw(w)
 
         pygame.display.flip()
-        c.tick(5)
+        c.tick(10)
 
 pygame.quit()
 
