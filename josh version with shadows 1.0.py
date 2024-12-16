@@ -371,7 +371,7 @@ while running:
         ground[0].draw(w)
 
         pygame.display.flip()
-        c.tick(10)
+        c.tick(40)
 
 pygame.quit()
 
