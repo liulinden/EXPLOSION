@@ -324,18 +324,18 @@ def createRandomPolygon(color, minSides, maxSides):
 
     points = []
 
-    for i in range(sides):
-        #generate random angle 
-        angle = random.uniform(0, 6.28319)
+    angles = sorted([random.uniform(0, 6.28319) for i in range(sides)])
+
+    # angle = random.uniform(0, 6.28319)
+
+    for angle in angles:
+        
         distance = random.uniform(radius/2, radius)
 
         x = center_x + distance * math.cos(angle)
         y = center_y + distance * math.sin(angle)
         
         points.append((x, y))
-
-    points.sort()
-    print(points)
 
     shape=points
 
