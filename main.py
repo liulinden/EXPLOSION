@@ -52,16 +52,10 @@ class Ground:
 #polygon class
 class Polygon:
     def __init__(self, color, shape, x=0, y=0):
+        
         self.type = "polygon"
         self.color = color
-<<<<<<< HEAD
-        self.x = x
-        self.y = y
-        self.angle = 0
-        self.mass = 1000
-        self.vertices = [[vertex[0] + x, vertex[1] + y] for vertex in shape]
-        self.xVel = 5 + -1 * len(shape)  # Example initial velocity
-=======
+
 
         #relative position from initial position
         self.x=x
@@ -78,7 +72,12 @@ class Polygon:
 
         #velocities (x,y,angle)
         self.xVel = 5+-1*len(shape) #4
->>>>>>> polygon
+        self.x = x
+        self.y = y
+        self.angle = 0
+        self.mass = 1000
+        self.vertices = [[vertex[0] + x, vertex[1] + y] for vertex in shape]
+        self.xVel = 5 + -1 * len(shape)  # Example initial velocity
         self.yVel = -10
         self.aVel = -8 * math.pi / 180
         self.forces = []
@@ -94,7 +93,8 @@ class Polygon:
             maxy=max(maxy,vertex[1])
         self.rect=pygame.Rect(minx,miny,maxx-minx,maxy-miny)
 
-
+    def draw(self, surface):
+        pygame.draw.polygon(surface, self.color, self.vertices)
 
     def drawForces(self,surface):
         for force in self.forces:
@@ -184,6 +184,8 @@ class Polygon:
                 if len(self.vertices)==3:
                     #print(tanComp)
                     pass
+                    #print(tanComp)
+                    pass
         #print(xAcc,yAcc, aAcc)
         
         #apply net force
@@ -196,14 +198,11 @@ class Polygon:
 
         #move
         steps = max(magnitude(self.xVel, self.yVel)/10,abs(self.aVel)/0.01)
-<<<<<<< HEAD
-        # if len(self.vertices)==3:
-        #     print(steps,self.aVel)
-=======
         if len(self.vertices)==3:
             #print(steps,self.aVel)
             pass
->>>>>>> polygon
+        # if len(self.vertices)==3:
+        #     print(steps,self.aVel)
         stepSize = magnitude(self.xVel, self.yVel)/steps
         if steps > 0:
             #be wary of getting stuck between stuff,
@@ -290,19 +289,13 @@ class Polygon:
                     """
 
         #self.rotate(10*math.pi/180)
-<<<<<<< HEAD
+        #print("avel,1", self.aVel)
         # print("avel,1", self.aVel)
         self.xVel=self.x-initX
         self.yVel=self.y-initY
         self.aVel=self.angle-initA
-        # print(self.aVel)
-=======
-        #print("avel,1", self.aVel)
-        self.xVel=self.x-initX
-        self.yVel=self.y-initY
-        self.aVel=self.angle-initA
         #print(self.aVel)
->>>>>>> polygon
+        # print(self.aVel)
 
         self.updateRect()
 
@@ -364,10 +357,18 @@ def createRegularShape(color, sides, radius=1, x=0,y=0):
 def randomColor():
     return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
+#setup
+SCREENWIDTH = 1000
+SCREENHEIGHT = 700
+w = pygame.display.set_mode([SCREENWIDTH,SCREENHEIGHT])
+c = pygame.time.Clock()
+w.fill((255,255,255))
+
 #constants
 GRAVITY = (0,2,0,0)
 
-def centerOfMass(list(vertices)):
+def centerOfMass(vertices):
+    vertices = list(vertices)
     x = []
     y = []
     xCenter = []
@@ -389,8 +390,8 @@ def centerOfMass(list(vertices)):
     xCenter = sum(xCenter)
 
     #multiply by 1 over 6 * the Area
-    #xCenter = xCenter * (1 / (6 * A))
-    #yCenter = yCenter * (1 / (6 * A))
+    xCenter = xCenter * (1 / (6 * area))
+    yCenter = yCenter * (1 / (6 * area))
 
     print(xCenter, yCenter)
 
@@ -427,22 +428,20 @@ lines=[]
 ground = [Ground((50,50,50), 600)]
 shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(), 3, 10)]
 running = True
-<<<<<<< HEAD
-
-
-
-
-# Modify the main loop to draw shadows
-=======
  
 def findArea():
     pass
 
 
->>>>>>> polygon
+
+
+
+
+# Modify the main loop to draw shadows
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            pygame.quit()
             running = False
 
     if running:
@@ -464,7 +463,9 @@ while running:
         ground[0].draw(w)
 
         pygame.display.flip()
-<<<<<<< HEAD
+        c.tick(60)
+
+
         c.tick(40)
 
 pygame.quit()
@@ -489,7 +490,3 @@ pygame.quit()
         
 #         pygame.display.flip()
 #         c.tick(60)
-=======
-        c.tick(60)
-
->>>>>>> polygon
