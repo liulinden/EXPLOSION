@@ -13,6 +13,9 @@ pygame.init()
 def magnitude(cx,cy):
     return math.sqrt(cx**2+cy**2)
 
+def randomColor():
+    return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+
 def toPolar(x,y):
     if x>0:
         return math.atan(y/x), magnitude(x,y)
@@ -64,6 +67,10 @@ def angVelToPos(radius, angle, aVel):
     dx=mag*(-math.sin(angle))
     dy=mag*(math.cos(angle))
     return dx,dy
+
+
+
+
 
 #ground class
 class Ground:
@@ -324,150 +331,6 @@ class Polygon:
         #self.aVel=self.angle-initA            
                     
 
-
-
-                    
-
-
-                
-
-                
-                
-
-
-            
-
-    """
-    #frame actions
-    def tick(self):
-        
-        initX = self.x
-        initY = self.y
-        initA = self.angle
-
-        #get net acceleration
-        xAcc=0
-        yAcc=0
-        aAcc=0
-        for force in self.forces:
-            if force[2]==0 and force[3]==0:
-                xAcc+=force[0]
-                yAcc+=force[1]
-            else:
-                refAngle,lever=toPolar(force[2],force[3])
-                a,r=toPolar(force[0],force[1])
-                dirComp,tanComp = toComponents(a-refAngle,r)
-                dx,dy=toComponents(refAngle,dirComp)
-                xAcc+=dx
-                yAcc+=dy
-                #print(dirComp, tanComp)
-
-                aAcc+=tanComp*lever/2000
-        #print(xAcc,yAcc, aAcc)
-        
-        #print(self.yVel)
-
-        #apply net force
-        self.xVel+=xAcc
-        self.yVel+=yAcc
-        self.aVel+=aAcc
-        #reset forces
-        self.forces = [GRAVITY]
-
-        #move 
-        #TODO redefine steps for angles based on change in position of points, not change in angle
-        steps = (magnitude(self.xVel, self.yVel)+self.radius*(abs(self.aVel)+1))/20
-        if steps > 0:
-            stepSize = magnitude(self.xVel, self.yVel)/steps
-            #be wary of getting stuck between stuff,
-            #print("steps", steps)
-            xStep = self.xVel/steps
-            yStep = self.yVel/steps
-            aStep = self.aVel/steps
-            print(self.aVel*180/math.pi)
-            collisions = []
-            finalCollisions=[]
-            while steps > 1:
-                steps-=1
-                self.move(xStep,yStep)
-                self.rotate(aStep)
-                collisions=self.checkCollisions(shapes+ground)
-                if len(collisions) > 0:
-                    finalCollisions=collisions
-                    tolerance=math.ceil(stepSize+self.radius)
-                    for i in range(tolerance):
-                        dx,dy=toComponents(collisions[0][2],1)
-                        self.move(dx,dy)
-                        collisions=self.checkCollisions(shapes+ground)
-                        if len(collisions)==0:
-                            break
-                    if len(collisions)>0:
-                        print(collisions,"womp1")
-                        self.move(-tolerance*dx-xStep,-tolerance*dy-yStep)
-                        self.rotate(-aStep)
-                        steps=1
-                        break
-            while steps > 0:
-                steps -= 0.1
-                self.move(xStep/10,yStep/10)
-                self.rotate(aStep/10)
-                collisions=self.checkCollisions(shapes+ground)
-                
-                if len(collisions) > 0:
-                    print("boom2")
-                    finalCollisions=collisions
-                    tolerance=math.ceil(stepSize/10+self.radius)
-                    stuck=True
-                    for i in range(tolerance):
-                        dx,dy=toComponents(collisions[0][2],1)
-                        self.move(dx,dy)
-                        collisions=self.checkCollisions(shapes+ground)
-                        if len(collisions)==0:
-                            stuck=False
-                            break
-                        else:
-                            #TODO edit for multiple collisions
-                            finalCollisions=collisions
-                    
-                    if stuck:
-                        print("womp2")
-                        self.move(-tolerance*dx-xStep/10,-tolerance*dy-yStep/10)
-                        self.rotate(-aStep/10)
-                        break
-            if len(finalCollisions) >0:
-                for collision in finalCollisions:
-                    speed,contact,angle=collision
-
-                    #temporary
-                    a,r=toPolar(xAcc,yAcc)
-                    normalMag=math.cos(a-angle)*r
-                    x,y=toComponents(-angle,normalMag)
-                    #print(x,y)
-                    self.forces.append((x,y,contact[0]-self.x,contact[1]-self.y))
-
-                    #friction skip
-                    
-
-                    staticFriction=1
-                    kineticFriction=1/2
-
-                    a,r=toPolar(self.xVel-speed[0],self.yVel-speed[1])
-                    x,y=toComponents(a-angle,r)
-                    a,r=toPolar(0,y)
-                    x,y=toComponents(a+angle,normalMag)
-                    #if r>2:
-                        #self.forces.append((x*kineticFriction,y*kineticFriction,contact[0]-self.x,contact[1]-self.y))
-
-        #self.rotate(10*math.pi/180)
-        self.xVel=self.x-initX
-        self.yVel=self.y-initY
-        self.aVel=self.angle-initA
-
-        self.updateRect()
-        """
-            
-
-
     def split(self):
         ...
 
@@ -480,10 +343,41 @@ def createRegularShape(color, sides, radius=1, x=0,y=0):
         shape.append((math.cos(arg)*radius,math.sin(arg)*radius))
     return Polygon(color, shape,x,y)
 
+class Physics:
+    def __init__(self, startShapes=[Ground((0,0,0),600)]):
+        self.shapes = []
+        self.time = 0
+        self.GRAVITY = 1
+        self.staticColliders = startShapes
+    
+    def tick(self, fps):
+    
+        #set time tracking variables
+        frameTime = 0
+        finishTime = 1000/fps
+
+        #simulate frame
+        while frameTime < finishTime:
+
+            #update step time - number of milliseconds to simulate
+            stepTime= min(100,finishTime-frameTime)
+            frameTime += stepTime
+
+            #simulate shapes for 
+            for shape in self.shapes:
+                shape.simulate(stepTime)
+        
+        self.time+= finishTime
+            
+    
+    def addRegularShape():
+        ...
 
 
-def randomColor():
-    return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
+    def addShape():
+        ...
+    
+
 
 #setup
 SCREENWIDTH = 1000
@@ -496,7 +390,6 @@ id=1
 #constants
 GRAVITY = 2
 
-lines=[]
 ground = [Ground((50,50,50), 600)]
 #Polygon((200,50,50),[[-70,10],[10,10],[10,50],[50,50],[50,-30],[-70,-30]],SCREENWIDTH/2,SCREENHEIGHT/2), 
 shapes = [createRegularShape(randomColor(),random.randint(3,7),50,SCREENWIDTH/2,SCREENHEIGHT/2)]#,createRegularShape(randomColor(),4,50,SCREENWIDTH/2,100)]
