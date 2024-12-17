@@ -55,8 +55,7 @@ class Polygon:
         self.mass=1000
 
         #find center of mass and set self.x and self.y accordingly
-
-
+        
         #coordinates of vertices on window
         self.vertices = []
         for vertex in shape:
@@ -173,7 +172,8 @@ class Polygon:
 
                 aAcc+=tanComp*lever/1500
                 if len(self.vertices)==3:
-                    print(tanComp)
+                    #print(tanComp)
+                    pass
         #print(xAcc,yAcc, aAcc)
         
         #apply net force
@@ -187,7 +187,8 @@ class Polygon:
         #move
         steps = max(magnitude(self.xVel, self.yVel)/10,abs(self.aVel)/0.01)
         if len(self.vertices)==3:
-            print(steps,self.aVel)
+            #print(steps,self.aVel)
+            pass
         stepSize = magnitude(self.xVel, self.yVel)/steps
         if steps > 0:
             #be wary of getting stuck between stuff,
@@ -208,7 +209,7 @@ class Polygon:
                         if len(collisions)==0:
                             break
                     if len(collisions)>0:
-                        print("womp")
+                        #print("womp")
                         self.move(-20*dx-xStep,-20*dy-yStep)
                         self.rotate(-aStep)
                         steps=0.9
@@ -274,11 +275,11 @@ class Polygon:
                     """
 
         #self.rotate(10*math.pi/180)
-        print("avel,1", self.aVel)
+        #print("avel,1", self.aVel)
         self.xVel=self.x-initX
         self.yVel=self.y-initY
         self.aVel=self.angle-initA
-        print(self.aVel)
+        #print(self.aVel)
 
         self.updateRect()
 
@@ -312,12 +313,38 @@ w.fill((255,255,255))
 #constants
 GRAVITY = (0,2,0,0)
 
+def centerOfMass(list(vertices)):
+    x = []
+    y = []
+    xCenter = []
+    yCenter = []
+    #split the tuple into a list of x and list of y
+    for i in range(len(vertices)):
+        xVertex, yVertex = vertices[i]
+        x.append(xVertex)
+        y.append(yVertex)
+
+    #complete the summations for x and y coordinates
+    for i in range (len(x) - 1):
+        point = (x[i] + x[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
+        xCenter.append(point)
+    for i in range(len(y) - 1):
+        point = (y[i] + y[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
+        yCenter.append(point)
+    yCenter = sum(yCenter)
+    xCenter = sum(xCenter)
+
+    #multiply by 1 over 6 * the Area
+    #xCenter = xCenter * (1 / (6 * A))
+    #yCenter = yCenter * (1 / (6 * A))
+
+    print(xCenter, yCenter)
 
 
 def createRandomPolygon(color, minSides, maxSides):
 
-    center_x = SCREENWIDTH/2
-    center_y = SCREENHEIGHT/2
+    center_x = 0
+    center_y = 0
 
     radius = random.randint(50, 100)
     sides = random.randint(minSides, maxSides)
@@ -338,8 +365,8 @@ def createRandomPolygon(color, minSides, maxSides):
         points.append((x, y))
 
     shape=points
-
-    return Polygon(color, shape)
+    centerOfMass(shape)
+    return Polygon(color, shape, SCREENWIDTH/2, SCREENHEIGHT/2)
 
 
 lines=[]
@@ -350,9 +377,6 @@ running = True
 def findArea():
     pass
 
-def centerOfMass():
-    #find center of mass of a shape
-    pass
 
 while running:
     for event in pygame.event.get():
