@@ -60,8 +60,26 @@ class Ground:
 #polygon class
 class Polygon:
     def __init__(self, color, shape, x=0, y=0):
+        
         self.type = "polygon"
         self.color = color
+
+
+        #relative position from initial position
+        self.x=x
+        self.y=y
+        self.angle=0
+        self.mass=1000
+
+        #find center of mass and set self.x and self.y accordingly
+        
+        #coordinates of vertices on window
+        self.vertices = []
+        for vertex in shape:
+            self.vertices.append([vertex[0]+x,vertex[1]+y])
+
+        #velocities (x,y,angle)
+        self.xVel = 5+-1*len(shape) #4
         self.x = x
         self.y = y
         self.angle = 0
@@ -83,7 +101,8 @@ class Polygon:
             maxy=max(maxy,vertex[1])
         self.rect=pygame.Rect(minx,miny,maxx-minx,maxy-miny)
 
-
+    def draw(self, surface):
+        pygame.draw.polygon(surface, self.color, self.vertices)
 
     def drawForces(self,surface):
         for force in self.forces:
@@ -173,6 +192,8 @@ class Polygon:
                 if len(self.vertices)==3:
                     #print(tanComp)
                     pass
+                    #print(tanComp)
+                    pass
         #print(xAcc,yAcc, aAcc)
         
         #apply net force
@@ -185,6 +206,9 @@ class Polygon:
 
         #move
         steps = max(magnitude(self.xVel, self.yVel)/10,abs(self.aVel)/0.01)
+        if len(self.vertices)==3:
+            #print(steps,self.aVel)
+            pass
         # if len(self.vertices)==3:
         #     print(steps,self.aVel)
         stepSize = magnitude(self.xVel, self.yVel)/steps
@@ -207,7 +231,7 @@ class Polygon:
                         if len(collisions)==0:
                             break
                     if len(collisions)>0:
-                        print("womp")
+                        #print("womp")
                         self.move(-20*dx-xStep,-20*dy-yStep)
                         self.rotate(-aStep)
                         steps=0.9
@@ -273,10 +297,12 @@ class Polygon:
                     """
 
         #self.rotate(10*math.pi/180)
+        #print("avel,1", self.aVel)
         # print("avel,1", self.aVel)
         self.xVel=self.x-initX
         self.yVel=self.y-initY
         self.aVel=self.angle-initA
+        #print(self.aVel)
         # print(self.aVel)
 
         self.updateRect()
@@ -339,13 +365,82 @@ def createRegularShape(color, sides, radius=1, x=0,y=0):
 def randomColor():
     return (random.randint(0, 255), random.randint(0, 255), random.randint(0, 255))
 
+#setup
+SCREENWIDTH = 1000
+SCREENHEIGHT = 700
+w = pygame.display.set_mode([SCREENWIDTH,SCREENHEIGHT])
+c = pygame.time.Clock()
+w.fill((255,255,255))
+
 #constants
 GRAVITY = (0,2,0,0)
 
+def centerOfMass(vertices):
+    vertices = list(vertices)
+    x = []
+    y = []
+    xCenter = []
+    yCenter = []
+    #split the tuple into a list of x and list of y
+    for i in range(len(vertices)):
+        xVertex, yVertex = vertices[i]
+        x.append(xVertex)
+        y.append(yVertex)
+
+    #complete the summations for x and y coordinates
+    for i in range (len(x) - 1):
+        point = (x[i] + x[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
+        xCenter.append(point)
+    for i in range(len(y) - 1):
+        point = (y[i] + y[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
+        yCenter.append(point)
+    yCenter = sum(yCenter)
+    xCenter = sum(xCenter)
+
+    #multiply by 1 over 6 * the Area
+    xCenter = xCenter * (1 / (6 * area))
+    yCenter = yCenter * (1 / (6 * area))
+
+    print(xCenter, yCenter)
+
+
+def createRandomPolygon(color, minSides, maxSides):
+
+    center_x = 0
+    center_y = 0
+
+    radius = random.randint(50, 100)
+    sides = random.randint(minSides, maxSides)
+
+    points = []
+
+    angles = sorted([random.uniform(0, 6.28319) for i in range(sides)])
+
+    # angle = random.uniform(0, 6.28319)
+
+    for angle in angles:
+        
+        distance = random.uniform(radius/2, radius)
+
+        x = center_x + distance * math.cos(angle)
+        y = center_y + distance * math.sin(angle)
+        
+        points.append((x, y))
+
+    shape=points
+    centerOfMass(shape)
+    return Polygon(color, shape, SCREENWIDTH/2, SCREENHEIGHT/2)
+
+
 lines=[]
 ground = [Ground((50,50,50), 600)]
-shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100)]
+shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(), 3, 10)]
 running = True
+ 
+def findArea():
+    pass
+
+
 
 
 getArea([(0,0),(0,50),(50,50),(50,0)])
@@ -354,6 +449,7 @@ getArea([(0,0),(0,50),(50,50),(50,0)])
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
+            pygame.quit()
             running = False
 
     if running:
@@ -375,6 +471,9 @@ while running:
         ground[0].draw(w)
 
         pygame.display.flip()
+        c.tick(60)
+
+
         c.tick(40)
 
 pygame.quit()
