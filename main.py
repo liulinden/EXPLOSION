@@ -17,6 +17,14 @@ w.fill((255,255,255))
 #import polygenerator 
 pygame.init()
 
+#get area
+def getArea(vertices):
+    area = 0
+    for i in range(len(vertices)):
+        shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
+        area += shoe
+    print(int(area))
+
 #get magnitude of vector
 def magnitude(cx,cy):
     return math.sqrt(cx**2+cy**2)
@@ -301,7 +309,7 @@ class Polygon:
 
     def drawShadow(self, surface, light_source):
         shadow_color = (50, 50, 50)
-        shadow_length = 10  # Arbitrary long shadow length
+        shadow_length = 10
         lx, ly = light_source  # Light source position
 
         # List to hold the extended shadow points
@@ -337,7 +345,7 @@ class Polygon:
     def draw(self, surface):
         pygame.draw.polygon(surface, self.color, self.vertices)
 
-            
+    
 
 
     def split(self):
@@ -436,7 +444,7 @@ def findArea():
 
 
 
-
+getArea([(0,0),(0,50),(50,50),(50,0)])
 
 # Modify the main loop to draw shadows
 while running:
