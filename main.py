@@ -75,9 +75,9 @@ def angVelToPos(radius, angle, aVel):
 #ground class
 class Ground:
     def __init__(self, color, y):
-        global id
-        self.id=id
-        id+=1
+        #global id
+        #elf.id=id
+        #id+=1
         self.type = "ground"
         self.color= color
         self.y = y
@@ -97,7 +97,7 @@ class Polygon:
         
         self.type = "polygon"
         self.id = id
-        id+=1
+        #id+=1
 
         self.color = color
 
@@ -210,7 +210,6 @@ class Polygon:
     def transform(self, dx,dy,da):
         self.move(dx,dy)
         self.rotate(da)
-        displayFrame(100)#
     
     #move by dx dy, ignoring physics and stuff
     def move(self, dx, dy):
@@ -330,7 +329,15 @@ class Polygon:
         #self.yVel=self.y-initY
         #self.aVel=self.angle-initA            
                     
+    #simulate physics for ms milliseconds
+    def simulate(self, physics, ms):
 
+        #convert to seconds
+        s=ms/1000
+
+        self.yVel += physics.g*s
+        self.transform(self.xVel*s,self.yVel*s,self.aVel*s)
+    
     def split(self):
         ...
 
@@ -343,13 +350,19 @@ def createRegularShape(color, sides, radius=1, x=0,y=0):
         shape.append((math.cos(arg)*radius,math.sin(arg)*radius))
     return Polygon(color, shape,x,y)
 
+
+
+#overarching class
 class Physics:
-    def __init__(self, startShapes=[Ground((0,0,0),600)]):
+
+    #setup
+    def __init__(self, GRAVITY=2000, startShapes=[Ground((0,0,0),600)]):
         self.shapes = []
         self.time = 0
-        self.GRAVITY = 1
+        self.g = GRAVITY
         self.staticColliders = startShapes
     
+    #do physics for frame
     def tick(self, fps):
     
         #set time tracking variables
@@ -359,22 +372,38 @@ class Physics:
         #simulate frame
         while frameTime < finishTime:
 
-            #update step time - number of milliseconds to simulate
-            stepTime= min(100,finishTime-frameTime)
+            #choose time per step based on shape movement - number of milliseconds to simulate
+            stepTime= finishTime-frameTime
+            for shape in self.shapes:
+                #TODO - 50 is arbitrarily chosen, but it should be the greatest radius of the given shape
+                stepTime = min(stepTime,1000/max(1,magnitude(shape.xVel,shape.yVel)+abs(shape.aVel)*50))
+            
+            #update time
             frameTime += stepTime
 
-            #simulate shapes for 
+            #simulate shapes for stepTime milliseconds
             for shape in self.shapes:
-                shape.simulate(stepTime)
+                shape.simulate(self, stepTime)
         
-        self.time+= finishTime
-            
+        #update physics time
+        self.time += finishTime
     
-    def addRegularShape():
+    #draw shapes and colliders
+    def draw(self,w):
+        for shape in self.shapes:
+            shape.draw(w)
+        for collider in self.staticColliders:
+            collider.draw(w)
+    
+    #draw forces
+    def drawForces(self,w):
+        ...
+
+    def addRegularShape(self, sides, radius):
         ...
 
 
-    def addShape():
+    def addShape(self, vertices):
         ...
     
 
@@ -385,41 +414,34 @@ SCREENHEIGHT = 700
 w = pygame.display.set_mode([SCREENWIDTH,SCREENHEIGHT])
 c = pygame.time.Clock()
 w.fill((255,255,255))
-id=1
-
-#constants
-GRAVITY = 2
-
-ground = [Ground((50,50,50), 600)]
-#Polygon((200,50,50),[[-70,10],[10,10],[10,50],[50,50],[50,-30],[-70,-30]],SCREENWIDTH/2,SCREENHEIGHT/2), 
-shapes = [createRegularShape(randomColor(),random.randint(3,7),50,SCREENWIDTH/2,SCREENHEIGHT/2)]#,createRegularShape(randomColor(),4,50,SCREENWIDTH/2,100)]
+fps=60
 running = True
 
-def displayFrame(fps):
-    w.fill((255,255,255))
-    for shape in shapes:
-        shape.draw(w)
-        shape.drawForces(w)
-    ground[0].draw(w)
-        
-    pygame.display.flip()
-    c.tick(fps)
+#constants
+physics = Physics()
+physics.shapes.append(createRegularShape(randomColor(),5,50,SCREENWIDTH/2,SCREENHEIGHT/2))
 
+
+#main loop
 while running:
+
+    #check for closing window
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             running = False
+    
+    #frame stuff
     if running:
 
-        for shape in shapes:
-            shape.tickStart()
-        
-        
-        
+        #simulate physics
+        physics.tick(fps)
 
-        for shape in shapes:
-            shape.tickMove()
-        
-        displayFrame(30)
+        #render screen
+        w.fill((255,255,255))
+        physics.draw(w)
+
+        #update screen and tick
+        pygame.display.flip()
+        c.tick(fps)
         
