@@ -376,8 +376,7 @@ w.fill((255,255,255))
 GRAVITY = (0,2,0,0)
 
 def centerOfMass(vertices):
-    print(vertices)
-    print(getArea(vertices))
+    area = getArea(vertices)
     vertices = list(vertices)
     x = []
     y = []
@@ -400,7 +399,6 @@ def centerOfMass(vertices):
     xCenter = sum(xCenter)
 
     #multiply by 1 over 6 * the Area
-    area = 1
     xCenter = xCenter * (1 / (6 * area))
     yCenter = yCenter * (1 / (6 * area))
 
