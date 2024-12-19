@@ -377,6 +377,7 @@ w.fill((255,255,255))
 GRAVITY = (0,2,0,0)
 
 def centerOfMass(vertices):
+    area = getArea(vertices)
     vertices = list(vertices)
     x = []
     y = []
