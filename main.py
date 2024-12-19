@@ -24,6 +24,7 @@ def getArea(vertices):
         shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
         area += shoe
     print(int(area))
+    return area
 
 #get magnitude of vector
 def magnitude(cx,cy):
@@ -434,7 +435,7 @@ def createRandomPolygon(color, minSides, maxSides):
 
 lines=[]
 ground = [Ground((50,50,50), 600)]
-shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(), 3, 10)]
+shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(),3,10)]
 running = True
  
 def findArea():
