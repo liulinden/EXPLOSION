@@ -506,8 +506,8 @@ while running:
     if running:
         w.fill((255, 255, 255))
 
-        # Define light source position
-        light_source = (SCREENWIDTH - 100, 100)
+        # Get the current mouse position
+        light_source = pygame.mouse.get_pos()
 
         
         # Draw shapes and ground
