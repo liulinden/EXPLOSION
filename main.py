@@ -23,8 +23,8 @@ def getArea(vertices):
     for i in range(len(vertices)):
         shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
         area += shoe
-    print(int(area))
-    return area
+    print(round(area))
+    return round(area)
 
 #get magnitude of vector
 def magnitude(cx,cy):
@@ -92,7 +92,7 @@ def calculateMomentOfInertia(vertices, density=1):
     inertia *= (mass / 12)
     inertia = abs(inertia)  # Ensure positive result
     
-    return inertia/99999999999999
+    return round(inertia)
 
 
 
@@ -515,13 +515,18 @@ while running:
             shape.tick()
             # Draw shadows  first
             shape.drawShadow(w, light_source)
+            
+        for shape in shapes:
             shape.draw(w)
 
         for shape in shapes:
             inertia = calculateMomentOfInertia(shape.vertices)
             print(f"Moment of Inertia of shape: {inertia}")
-
             
+
+        # for shape in shapes:
+        #     area = getArea(shape.vertices)
+        #     print(f"area!! {area}")
 
         ground[0].draw(w)
 
