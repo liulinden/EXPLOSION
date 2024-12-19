@@ -48,6 +48,55 @@ def toComponents(angle,r):
 def getIntersection(seg1,seg2):
     ...
 
+#get intertia
+def calculateMomentOfInertia(vertices, density=1):
+    """
+    Calculates the moment of inertia of a polygon around its center of mass.
+
+    Args:
+        vertices (list of tuples): List of (x, y) coordinates of the polygon's vertices.
+        density (float): Mass per unit area (default is 1).
+
+    Returns:
+        float: The moment of inertia of the polygon.
+    """
+    # Ensure the polygon is closed
+    vertices = vertices + [vertices[0]]
+    
+    # Calculate the area of the polygon
+    area = getArea(vertices[:-1])  # Reuse the area function
+    if area == 0:
+        return 0
+
+    # Calculate center of mass
+    cx, cy = 0, 0
+    for i in range(len(vertices) - 1):
+        xi, yi = vertices[i]
+        xi1, yi1 = vertices[i + 1]
+        cross = xi * yi1 - xi1 * yi
+        cx += (xi + xi1) * cross
+        cy += (yi + yi1) * cross
+    cx /= (6 * area)
+    cy /= (6 * area)
+
+    # Calculate moment of inertia using the formula
+    inertia = 0
+    for i in range(len(vertices) - 1):
+        xi, yi = vertices[i]
+        xi1, yi1 = vertices[i + 1]
+        cross = xi * yi1 - xi1 * yi
+        inertia += (xi ** 2 + xi * xi1 + xi1 ** 2 + yi ** 2 + yi * yi1 + yi1 ** 2) * cross
+
+    # Multiply by mass (density * area) and scale
+    mass = density * area
+    inertia *= (mass / 12)
+    inertia = abs(inertia)  # Ensure positive result
+    
+    return inertia/99999999999999
+
+
+
+
 #ground class
 class Ground:
     def __init__(self, color, y):
@@ -467,7 +516,11 @@ while running:
             # Draw shadows  first
             shape.drawShadow(w, light_source)
             shape.draw(w)
-       
+
+        for shape in shapes:
+            inertia = calculateMomentOfInertia(shape.vertices)
+            print(f"Moment of Inertia of shape: {inertia}")
+
             
 
         ground[0].draw(w)
