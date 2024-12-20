@@ -19,13 +19,17 @@ pygame.init()
 
 #get area
 def getArea(vertices):
+    vertices = list(vertices)
     area = 0
+    x = []
+    y = []
     for i in range(len(vertices)):
         shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
         area += shoe
     print(int(area))
-    return area
 
+    return area
+    
 #get magnitude of vector
 def magnitude(cx,cy):
     return math.sqrt(cx**2+cy**2)
@@ -381,29 +385,18 @@ def centerOfMass(vertices):
     vertices = list(vertices)
     x = []
     y = []
-    xCenter = []
-    yCenter = []
+    xCenter = 0
+    yCenter = 0
     #split the tuple into a list of x and list of y
     for i in range(len(vertices)):
         xVertex, yVertex = vertices[i]
         x.append(xVertex)
         y.append(yVertex)
+    xCenter = sum(x) / len(x)
+    yCenter = sum(y) / len(y)
 
-    #complete the summations for x and y coordinates
-    for i in range (len(x) - 1):
-        point = (x[i] + x[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
-        xCenter.append(point)
-    for i in range(len(y) - 1):
-        point = (y[i] + y[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
-        yCenter.append(point)
-    yCenter = sum(yCenter)
-    xCenter = sum(xCenter)
-
-    #multiply by 1 over 6 * the Area
-    xCenter = xCenter * (1 / (6 * getArea(vertices)))
-    yCenter = yCenter * (1 / (6 * getArea(vertices)))
-
-    print(xCenter, yCenter)
+    center = (xCenter, yCenter)
+    return (center)
 
 
 def createRandomPolygon(color, minSides, maxSides):
@@ -430,7 +423,6 @@ def createRandomPolygon(color, minSides, maxSides):
         points.append((x, y))
 
     shape=points
-    centerOfMass(shape)
     return Polygon(color, shape, SCREENWIDTH/2, SCREENHEIGHT/2)
 
 
@@ -438,11 +430,6 @@ lines=[]
 ground = [Ground((50,50,50), 600)]
 shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(),3,10)]
 running = True
- 
-def findArea():
-    pass
-
-
 
 
 getArea([(0,0),(0,50),(50,50),(50,0)])
