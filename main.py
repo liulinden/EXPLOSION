@@ -10,6 +10,15 @@ import copy
 pygame.init()
 #random.seed(200)
 
+#get area
+def getArea(vertices):
+    area = 0
+    for i in range(len(vertices)):
+        shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
+        area += shoe
+    print(int(area))
+    return area
+
 #get magnitude of vector
 def magnitude(cx,cy):
     return math.sqrt(cx**2+cy**2)
@@ -101,6 +110,7 @@ class Polygon:
         #id+=1
 
         self.color = color
+
 
         #relative position from initial position
         self.x=x
@@ -395,6 +405,71 @@ w = pygame.display.set_mode([SCREENWIDTH,SCREENHEIGHT])
 c = pygame.time.Clock()
 w.fill((255,255,255))
 fps=30
+
+#constants
+GRAVITY = (0,2,0,0)
+
+def centerOfMass(vertices):
+    area = getArea(vertices)
+    vertices = list(vertices)
+    x = []
+    y = []
+    xCenter = []
+    yCenter = []
+    #split the tuple into a list of x and list of y
+    for i in range(len(vertices)):
+        xVertex, yVertex = vertices[i]
+        x.append(xVertex)
+        y.append(yVertex)
+
+    #complete the summations for x and y coordinates
+    for i in range (len(x) - 1):
+        point = (x[i] + x[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
+        xCenter.append(point)
+    for i in range(len(y) - 1):
+        point = (y[i] + y[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
+        yCenter.append(point)
+    yCenter = sum(yCenter)
+    xCenter = sum(xCenter)
+
+    #multiply by 1 over 6 * the Area
+    xCenter = xCenter * (1 / (6 * getArea(vertices)))
+    yCenter = yCenter * (1 / (6 * getArea(vertices)))
+
+    print(xCenter, yCenter)
+
+
+def createRandomPolygon(color, minSides, maxSides):
+
+    center_x = 0
+    center_y = 0
+
+    radius = random.randint(50, 100)
+    sides = random.randint(minSides, maxSides)
+
+    points = []
+
+    angles = sorted([random.uniform(0, 6.28319) for i in range(sides)])
+
+    # angle = random.uniform(0, 6.28319)
+
+    for angle in angles:
+        
+        distance = random.uniform(radius/2, radius)
+
+        x = center_x + distance * math.cos(angle)
+        y = center_y + distance * math.sin(angle)
+        
+        points.append((x, y))
+
+    shape=points
+    centerOfMass(shape)
+    return Polygon(color, shape, SCREENWIDTH/2, SCREENHEIGHT/2)
+
+
+lines=[]
+ground = [Ground((50,50,50), 600)]
+shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(),3,10)]
 running = True
 
 #constants
