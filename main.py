@@ -473,7 +473,7 @@ class Polygon:
         self.updateRect()
 
     def drawShadow(self, surface, light_source):
-        shadow_color = (50, 50, 50)
+        shadow_color = (200, 200, 200)
         shadow_length = 10
         lx, ly = light_source  # Light source position
 
@@ -570,11 +570,16 @@ class Physics:
         self.time += finishTime
     
     #draw shapes and colliders
-    def draw(self,w):
+    def draw(self,w,forces=False,shadows=False,shadowPos=(0,0)):
+        if shadows:
+            for shape in self.shapes:
+                shape.drawShadow(w,shadowPos)
         for shape in self.shapes:
             shape.draw(w)
         for collider in self.staticColliders:
             collider.draw(w)
+        if forces:
+            self.drawForces(w)
     
     #draw forces
     def drawForces(self,w):
@@ -680,7 +685,7 @@ while running:
         if event.type == pygame.MOUSEBUTTONDOWN:
             x,y=pygame.mouse.get_pos()
             physics.shapes.append(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
-    
+
     #frame stuff
     if running:
 
@@ -689,7 +694,8 @@ while running:
 
         #render screen
         w.fill((255,255,255))
-        physics.draw(w)
+        physics.draw(w, shadows=True, shadowPos=pygame.mouse.get_pos())
+
         #physics.drawForces(w)
 
         #update screen and tick
