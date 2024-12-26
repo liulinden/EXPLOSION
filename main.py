@@ -110,7 +110,7 @@ class Polygon:
 
         #should be calculated, currently not used
         self.mass=1
-        self.inertia=50000
+        self.inertia=10000
 
         #find center of mass and set self.x and self.y accordingly
         ...
@@ -132,7 +132,7 @@ class Polygon:
         self.forces= []
 
         #temporary
-        self.rotate(0)
+        self.rotate(1)
 
         #rect
         self.rect=pygame.Rect(0,0,10,10)
