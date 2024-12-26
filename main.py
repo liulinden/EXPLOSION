@@ -694,9 +694,7 @@ while running:
 
         #render screen
         w.fill((255,255,255))
-        physics.draw(w, shadows=True, shadowPos=pygame.mouse.get_pos())
-
-        #physics.drawForces(w)
+        physics.draw(w, shadows=True, shadowPos=(0,0))
 
         #update screen and tick
         pygame.display.flip()
