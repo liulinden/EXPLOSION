@@ -10,6 +10,24 @@ import copy
 pygame.init()
 #random.seed(200)
 
+#get area
+def getArea(vertices):
+    area = 0
+    for i in range(len(vertices)):
+        shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
+        area += shoe
+    print(int(area))
+    return area
+
+#get area
+def getArea(vertices):
+    area = 0
+    for i in range(len(vertices)):
+        shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
+        area += shoe
+    print(int(area))
+    return area
+
 #get magnitude of vector
 def magnitude(cx,cy):
     return math.sqrt(cx**2+cy**2)
@@ -101,6 +119,7 @@ class Polygon:
         #id+=1
 
         self.color = color
+
 
         #relative position from initial position
         self.x=x
@@ -310,6 +329,189 @@ class Polygon:
 
     def maxMovement(self):
         return magnitude(self.xVel,self.yVel)+abs(self.aVel)*self.radius
+    #frame actions
+    def tick(self):
+        
+        initX = self.x
+        initY = self.y
+        initA = self.angle
+
+        #get net acceleration
+        xAcc=0
+        yAcc=0
+        aAcc=0
+        for force in self.forces:
+            if force[2]==0 and force[3]==0:
+                xAcc+=force[0]
+                yAcc+=force[1]
+            else:
+                refAngle,lever=toPolar(force[2],force[3])
+                a,r=toPolar(force[0],force[1])
+                dirComp,tanComp = toComponents(a-refAngle,r)
+                dx,dy=toComponents(refAngle,dirComp)
+                xAcc+=dx
+                yAcc+=dy
+                #print(dirComp, tanComp)
+
+                aAcc+=tanComp*lever/1500
+                if len(self.vertices)==3:
+                    #print(tanComp)
+                    pass
+                    #print(tanComp)
+                    pass
+        #print(xAcc,yAcc, aAcc)
+        
+        #apply net force
+        self.xVel+=xAcc
+        self.yVel+=yAcc
+        self.aVel+=aAcc
+
+        #reset forces
+        self.forces = [GRAVITY]
+
+        #move
+        steps = max(magnitude(self.xVel, self.yVel)/10,abs(self.aVel)/0.01)
+        if len(self.vertices)==3:
+            #print(steps,self.aVel)
+            pass
+        # if len(self.vertices)==3:
+        #     print(steps,self.aVel)
+        stepSize = magnitude(self.xVel, self.yVel)/steps
+        if steps > 0:
+            #be wary of getting stuck between stuff,
+            xStep = self.xVel/steps
+            yStep = self.yVel/steps
+            aStep = self.aVel/steps
+            collisions = []
+            while steps >= 1:
+                steps-=1
+                self.move(xStep,yStep)
+                self.rotate(aStep)
+                collisions=self.checkCollisions(shapes+ground)
+                if len(collisions) > 0:
+                    for i in range(20):
+                        dx,dy=toComponents(collisions[0][2],stepSize/10)
+                        self.move(dx,dy)
+                        collisions=self.checkCollisions(shapes+ground)
+                        if len(collisions)==0:
+                            break
+                    if len(collisions)>0:
+                        #print("womp")
+                        self.move(-20*dx-xStep,-20*dy-yStep)
+                        self.rotate(-aStep)
+                        steps=0.9
+                        break
+            while steps > 0:
+                steps -= 0.1
+                self.move(xStep/10,yStep/10)
+                self.rotate(aStep/10)
+                collisions=self.checkCollisions(shapes+ground)
+                if len(collisions) > 0:
+                    self.move(-xStep/10,-yStep/10)
+                    self.rotate(-aStep/10)
+
+            if len(collisions) >0:
+                for collision in collisions:
+                    speed,contact,angle=collision
+
+                    #temporary
+                    a,r=toPolar(xAcc,yAcc)
+                    normalMag=math.cos(a-angle)*r
+                    x,y=toComponents(-angle,normalMag)
+                    #print(x,y)
+                    self.forces.append((x,y,contact[0]-self.x,contact[1]-self.y))
+
+        """
+        stepSize = 10
+        steps = max(math.floor(magnitude(self.xVel, self.yVel)/stepSize),math.floor(self.aVel/0.1))
+        if steps==0:
+            stepSize=1
+            steps = max(math.floor(magnitude(self.xVel, self.yVel)),math.floor(self.aVel/0.01))
+        if steps>0:
+            xStep = self.xVel/steps
+            yStep = self.yVel/steps
+            aStep = self.aVel/steps
+            collisions = []
+
+            #redo part, include friction
+            for i in range(steps):
+                self.move(xStep,yStep)
+                self.rotate(aStep)
+                collisions=self.checkCollisions(shapes+ground)
+                if len(collisions) > 0:
+                    self.move(-xStep,-yStep)
+                    self.rotate(-aStep)
+                    if stepSize==1:
+                        break
+                    else:
+                        for i in range(10):
+                            self.move(xStep/10,yStep/10)
+                            self.rotate(aStep/10)
+                            collisions=self.checkCollisions(shapes+ground)
+                            if len(collisions) > 0:
+                                self.move(-xStep/10,-yStep/10)
+                                self.rotate(-aStep/10)
+                                break
+
+            if len(collisions) >0:
+                for collision in collisions:
+                    speed,contact=collision
+
+                    #temporary
+                    self.forces.append((0,-2,contact[0]-self.x,contact[1]-self.y))
+                    """
+
+        #self.rotate(10*math.pi/180)
+        #print("avel,1", self.aVel)
+        # print("avel,1", self.aVel)
+        self.xVel=self.x-initX
+        self.yVel=self.y-initY
+        self.aVel=self.angle-initA
+        #print(self.aVel)
+        # print(self.aVel)
+
+        self.updateRect()
+
+    def drawShadow(self, surface, light_source):
+        shadow_color = (50, 50, 50)
+        shadow_length = 10
+        lx, ly = light_source  # Light source position
+
+        # List to hold the extended shadow points
+        shadow_vertices = []
+
+        # Loop through each edge of the polygon
+        for i in range(len(self.vertices)):
+            # Get the current vertex and the next vertex
+            current_vertex = self.vertices[i]
+            next_vertex = self.vertices[(i + 1) % len(self.vertices)]
+
+            # Calculate the direction of the shadow for each vertex
+            dx1, dy1 = current_vertex[0] - lx, current_vertex[1] - ly
+            dx2, dy2 = next_vertex[0] - lx, next_vertex[1] - ly
+
+            # Project the vertices far away to simulate the shadow
+            shadow_v1 = (current_vertex[0] + dx1 * shadow_length, current_vertex[1] + dy1 * shadow_length)
+            shadow_v2 = (next_vertex[0] + dx2 * shadow_length, next_vertex[1] + dy2 * shadow_length)
+
+            # Add the original and projected shadow points
+            shadow_vertices.append(current_vertex)
+            shadow_vertices.append(next_vertex)
+            shadow_vertices.append(shadow_v2)
+            shadow_vertices.append(shadow_v1)
+
+            # Close and fill the shadow polygon
+            pygame.draw.polygon(surface, shadow_color, [current_vertex, next_vertex, shadow_v2, shadow_v1])
+
+        
+        
+
+
+    def draw(self, surface):
+        pygame.draw.polygon(surface, self.color, self.vertices)
+
+    
+
 
     def split(self):
         ...
@@ -395,6 +597,71 @@ w = pygame.display.set_mode([SCREENWIDTH,SCREENHEIGHT])
 c = pygame.time.Clock()
 w.fill((255,255,255))
 fps=30
+
+#constants
+GRAVITY = (0,2,0,0)
+
+def centerOfMass(vertices):
+    area = getArea(vertices)
+    vertices = list(vertices)
+    x = []
+    y = []
+    xCenter = []
+    yCenter = []
+    #split the tuple into a list of x and list of y
+    for i in range(len(vertices)):
+        xVertex, yVertex = vertices[i]
+        x.append(xVertex)
+        y.append(yVertex)
+
+    #complete the summations for x and y coordinates
+    for i in range (len(x) - 1):
+        point = (x[i] + x[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
+        xCenter.append(point)
+    for i in range(len(y) - 1):
+        point = (y[i] + y[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
+        yCenter.append(point)
+    yCenter = sum(yCenter)
+    xCenter = sum(xCenter)
+
+    #multiply by 1 over 6 * the Area
+    xCenter = xCenter * (1 / (6 * getArea(vertices)))
+    yCenter = yCenter * (1 / (6 * getArea(vertices)))
+
+    print(xCenter, yCenter)
+
+
+def createRandomPolygon(color, minSides, maxSides):
+
+    center_x = 0
+    center_y = 0
+
+    radius = random.randint(50, 100)
+    sides = random.randint(minSides, maxSides)
+
+    points = []
+
+    angles = sorted([random.uniform(0, 6.28319) for i in range(sides)])
+
+    # angle = random.uniform(0, 6.28319)
+
+    for angle in angles:
+        
+        distance = random.uniform(radius/2, radius)
+
+        x = center_x + distance * math.cos(angle)
+        y = center_y + distance * math.sin(angle)
+        
+        points.append((x, y))
+
+    shape=points
+    centerOfMass(shape)
+    return Polygon(color, shape, SCREENWIDTH/2, SCREENHEIGHT/2)
+
+
+lines=[]
+ground = [Ground((50,50,50), 600)]
+shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(),3,10)]
 running = True
 
 #constants
