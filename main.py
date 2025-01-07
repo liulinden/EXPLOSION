@@ -565,6 +565,8 @@ def createRandomPolygon(color, minSides, maxSides,shapeX,shapeY):
 
     angles = sorted([random.uniform(0, 6.28319) for i in range(sides)])
 
+    # angle = random.uniform(0, 6.28319)
+
     for angle in angles:
         
         distance = random.uniform(radius/2, radius)
