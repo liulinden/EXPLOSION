@@ -359,7 +359,7 @@ class Polygon:
 
     def drawShadow(self, surface, light_source):
         shadow_color = (50, 50, 50)
-        shadow_length = 10
+        shadow_length = 6
         lx, ly = light_source  # Light source position
 
         # List to hold the extended shadow points
