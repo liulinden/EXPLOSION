@@ -13,8 +13,6 @@ w = pygame.display.set_mode([SCREENWIDTH,SCREENHEIGHT])
 c = pygame.time.Clock()
 w.fill((255,255,255))
 
-
-#import polygenerator 
 pygame.init()
 
 #get area
@@ -30,6 +28,24 @@ def getArea(vertices):
 
     return area
     
+def centerOfMass(vertices):
+    area = getArea(vertices)
+    vertices = list(vertices)
+    x = []
+    y = []
+    xCenter = 0
+    yCenter = 0
+    #split the tuple into a list of x and list of y
+    for i in range(len(vertices)):
+        xVertex, yVertex = vertices[i]
+        x.append(xVertex)
+        y.append(yVertex)
+    xCenter = sum(x) / len(x)
+    yCenter = sum(y) / len(y)
+
+    center = (xCenter, yCenter)
+    return (center)
+
 #get magnitude of vector
 def magnitude(cx,cy):
     return math.sqrt(cx**2+cy**2)
@@ -353,7 +369,12 @@ class Polygon:
     
 
 
-    def split(self):
+    def split(self, pieces):
+        center = centerOfMass(self.vertices)
+
+        angles = sorted([random.uniform(0, 6.28319) for i in range(pieces)])
+
+        
         ...
 
 def createRegularShape(color, sides, radius=1, x=0,y=0):
@@ -380,25 +401,6 @@ w.fill((255,255,255))
 #constants
 GRAVITY = (0,2,0,0)
 
-def centerOfMass(vertices):
-    area = getArea(vertices)
-    vertices = list(vertices)
-    x = []
-    y = []
-    xCenter = 0
-    yCenter = 0
-    #split the tuple into a list of x and list of y
-    for i in range(len(vertices)):
-        xVertex, yVertex = vertices[i]
-        x.append(xVertex)
-        y.append(yVertex)
-    xCenter = sum(x) / len(x)
-    yCenter = sum(y) / len(y)
-
-    center = (xCenter, yCenter)
-    return (center)
-
-
 def createRandomPolygon(color, minSides, maxSides):
 
     center_x = 0
@@ -410,8 +412,6 @@ def createRandomPolygon(color, minSides, maxSides):
     points = []
 
     angles = sorted([random.uniform(0, 6.28319) for i in range(sides)])
-
-    # angle = random.uniform(0, 6.28319)
 
     for angle in angles:
         
