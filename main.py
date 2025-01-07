@@ -374,6 +374,10 @@ class Polygon:
 
         angles = sorted([random.uniform(0, 6.28319) for i in range(pieces)])
 
+        print(self.vertices)
+
+        for angle in angles:    
+            pass
         
         ...
 
