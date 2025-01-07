@@ -34,7 +34,7 @@ def centerOfMass(vertices):
     x = []
     y = []
     xCenter = 0
-    yCenter = 0
+    yCenter = 0 
     #split the tuple into a list of x and list of y
     for i in range(len(vertices)):
         xVertex, yVertex = vertices[i]
