@@ -46,6 +46,13 @@ def centerOfMass(vertices):
     center = (xCenter, yCenter)
     return (center)
 
+def checkDistance(center, vertices):
+    distance=0
+    for vertice in vertices:
+        print(vertice[0])
+
+    return distance 
+
 #get magnitude of vector
 def magnitude(cx,cy):
     return math.sqrt(cx**2+cy**2)
@@ -371,14 +378,22 @@ class Polygon:
 
     def split(self, pieces):
         center = centerOfMass(self.vertices)
+        center = list(center)
+        center_x = center[0]
+        center_y = center[1]
 
+        newPoints = []
+        
         angles = sorted([random.uniform(0, 6.28319) for i in range(pieces)])
 
         print(self.vertices)
 
         for angle in angles:    
-            pass
-        
+            distance = checkDistance(center, shape)
+            x = center_x + distance * math.cos(angle)
+            y = center_y + distance * math.sin(angle)
+            #pygame.draw.line(w, (1, 1, 1), center, (x, y))
+            
         ...
 
 def createRegularShape(color, sides, radius=1, x=0,y=0):
@@ -438,12 +453,19 @@ running = True
 
 getArea([(0,0),(0,50),(50,50),(50,0)])
 
+
+
 # Modify the main loop to draw shadows
 while running:
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
             running = False
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            for shape in shapes:
+                shape.split(3)
+        
+    
 
     if running:
         w.fill((255, 255, 255))
