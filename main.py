@@ -5,6 +5,7 @@ print("AAAAAAAAAAAAAAA")
 import random
 import pygame
 import math
+import time
 pygame.init()
 
 # Basic Functions
@@ -522,6 +523,35 @@ class Physics:
     def addShape(self, vertices):
         ...
 
+class Particle:
+    def __init__(self, x, y, color=(255, 255, 255)):
+        self.x = x
+        self.y = y
+        self.color = color
+        self.size = random.randint(3, 9) 
+        self.xVel = random.choice(range(-8, 0)) + random.choice(range(1, 8))
+        self.yVel = random.choice(range(-8, 0)) + random.choice(range(1, 8))
+        self.creation_time = time.time()
+    
+    def move(self):
+        # Update position based on velocity
+        self.x += self.xVel
+        self.y += self.yVel
+    
+    def draw(self, surface):
+        # Draw the particle as a circle
+        pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.size)
+
+    def is_expired(self):
+        return time.time() - self.creation_time > .5
+
+# Function to create particles originating from the center of the screen
+def createParticles(center_x, center_y, num_particles=7):
+    particles = []
+    for i in range(num_particles):  # Create specified number of particles
+        particles.append(Particle(center_x, center_y))
+    return particles
+
 def centerOfMass(vertices):
     area = getArea(vertices)
     vertices = list(vertices)
@@ -590,7 +620,8 @@ def createRegularShape(color, sides, radius=1, x=0,y=0):
 #setup
 SCREENWIDTH = 1000
 SCREENHEIGHT = 700
-w = pygame.display.set_mode([SCREENWIDTH,SCREENHEIGHT])
+w = pygame.display.set_mode((SCREENWIDTH,SCREENHEIGHT))
+center_x, center_y = SCREENWIDTH // 2, SCREENHEIGHT // 2
 c = pygame.time.Clock()
 w.fill((255,255,255))
 FPS=80
@@ -598,10 +629,12 @@ physics = Physics()
 physics.shapes.append(createRegularShape(randomColor(),5,50,SCREENWIDTH/2,SCREENHEIGHT/2))
 image = pygame.image.load('circlegradient.png')
 image = pygame.transform.scale(image, (image.get_width() * 2.5, image.get_height() * 2.5))
-
+particles = createParticles(center_x, center_y, 5)
 #setup vars
 lines=[]
 running = True
+
+
 
 #main loop
 while running:
@@ -617,17 +650,24 @@ while running:
             x,y=pygame.mouse.get_pos()
             physics.shapes.append(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
             #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
-
+            particles.extend(createParticles(x, y, num_particles=5))
+    # Update particles
+    particles = [particle for particle in particles if not particle.is_expired()]
+    for particle in particles:
+        particle.move()
+        
     #frame stuff
     if running:
 
         #simulate physics, increase argument here for slow mo
         physics.tick(FPS)
-
         #render screen
         w.fill((255,255,255))
         physics.draw(w, shadows=True)
         physics.draw(w, shadows=True,light=image,shadowColor=(0,0,0),lightPos=(SCREENWIDTH/2,-100),forces=False)
+        for particle in particles:
+            particle.draw(w)
+        
 
         #update screen and tick
         pygame.display.flip()
