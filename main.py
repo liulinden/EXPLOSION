@@ -42,6 +42,47 @@ def getArea(vertices):
     print(int(area))
     return area
 
+#get intertia, broken dont use
+def calculateMomentOfInertia(vertices, density=1):
+
+
+
+    """
+    Calculates the moment of inertia of a polygon around its center of mass.
+
+    Args:
+        vertices (list of tuples): List of (x, y) coordinates of the polygon's vertices.
+        density (float): Mass per unit area (default is 1).
+
+    Returns:
+        float: The moment of inertia of the polygon.
+    """
+    # Ensure the polygon is closed
+    vertices = vertices + [vertices[0]]
+    
+    # Calculate the area of the polygon
+    area = getArea(vertices[:-1])  # Reuse the area function
+    if area == 0:
+        return 0
+    
+    cx,cy=centerOfMass(vertices[:-1])
+
+    # Calculate moment of inertia using the formula
+    inertia = 0
+    for i in range(len(vertices) - 1):
+        xi, yi = vertices[i]
+        xi1, yi1 = vertices[i + 1]
+        xi,yi,xi1,yi1=xi-cx,yi-cy,xi1-cx,yi1-cy
+        cross=xi*yi1-yi*xi1
+        inertia += (xi ** 2 + xi * xi1 + xi1 ** 2 + yi ** 2 + yi * yi1 + yi1 ** 2) * cross
+
+    # Multiply by mass (density * area) and scale
+    mass = density * area
+    inertia *= (mass / 12)
+    inertia = abs(inertia)  # Ensure positive result
+    
+    return round(inertia)
+
 def getIntersection(seg1,seg2, segment=True):
     a1,a2=seg1
     b1,b2=seg2
@@ -137,8 +178,9 @@ class Polygon:
 
         #inertia is fakely calculated
         self.mass=getArea(shape)
-        self.inertia=math.pow(self.mass,2)*5
-        print(self.mass)
+        #self.inertia=calculateMomentOfInertia(shape)
+        self.inertia=self.mass**2*5
+        print(self.mass, self.inertia)
 
         #find center of mass and set self.x and self.y accordingly
         offsetX,offsetY=centerOfMass(shape)
@@ -297,10 +339,11 @@ class Polygon:
             #probably should be +=
             #self.aVel+=tanComp*lever/self.inertia
             da=tanComp*lever/self.inertia
-            if da*self.aVel<0:
-                self.aVel+=da
-            else:
-                self.aVel=max(self.aVel,da)
+            self.aVel+=da
+            #if da*self.aVel<0:
+            #    self.aVel+=da
+            #else:
+            #    self.aVel=max(self.aVel,da)
                     
     #simulate physics for ms milliseconds
     def simulate(self, physics, ms):
@@ -418,9 +461,10 @@ class Polygon:
                 #print(forceX,forceY)
                 #print(self.yVel,netVel,self.yVel*self.mass,forceY,"\n")
                 #add forces
-                self.applyForce(['N',-forceX,-forceY,contact[0]-self.x,contact[1]-self.y,ms])
-                if collider.type=="polygon":
-                    collider.applyForce(['N',forceX,forceY,contact[0]-collider.x,contact[1]-collider.y,ms])
+                
+                #self.applyForce(['N',-forceX,-forceY,contact[0]-self.x,contact[1]-self.y,ms])
+                #if collider.type=="polygon":
+                #    collider.applyForce(['N',forceX,forceY,contact[0]-collider.x,contact[1]-collider.y,ms])
 
     def maxMovement(self):
         return magnitude(self.xVel,self.yVel)+abs(self.aVel)*self.radius
