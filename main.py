@@ -136,6 +136,9 @@ class Polygon:
         self.y=y
         self.angle=0
 
+        #particleness
+        self.tater = 150
+
         #inertia is fakely calculated
         self.mass=getArea(shape)
         self.inertia=math.pow(self.mass,2)*5
@@ -193,7 +196,9 @@ class Polygon:
     #        pygame.draw.line(surface,(255,0,0),(self.x+force[3],self.y+force[4]),(self.x+force[3]+10*force[1],self.y+force[4]+10*force[2]))
 
     #return list of collisions, with collisions given as [collider object, point of contact, normal angle at contact]
+
     def checkCollisions(self, colliders):
+        global tater
         self.updateRect()
         collisions = []
         for collider in colliders:
@@ -235,6 +240,7 @@ class Polygon:
                                 nContacts+=1
                         if nContacts>0:
                             collisions.append([collider,[collider.x,yContactsSum/nContacts],math.pi/2*(1+dir)])
+                        
 
                 #polygon collision case
                 elif collider.type == "polygon":
@@ -253,6 +259,17 @@ class Polygon:
                                 if intersects[0]=="one":
                                     #may need to be flipped sometimes
                                     collisions.append([collider,[intersects[1][0],intersects[1][1]],math.pi/2+math.atan2(segment2[1][1]-segment2[0][1],segment2[1][0]-segment2[0][0])])
+       
+        current_time = pygame.time.get_ticks()
+        cooldown = 100
+        if len(collisions) > 0 and current_time - self.tater > cooldown:
+            for collision in collisions:
+                particles.extend(createParticles(collision[1][0], collision[1][1], num_particles = 4))
+            self.tater = current_time
+
+
+                
+                
 
         return collisions
     
@@ -529,8 +546,8 @@ class Particle:
         self.y = y
         self.color = color
         self.size = random.randint(3, 9) 
-        self.xVel = random.choice(range(-8, 0)) + random.choice(range(1, 8))
-        self.yVel = random.choice(range(-8, 0)) + random.choice(range(1, 8))
+        self.xVel = random.choice(range(-8, 0)) + random.choice(range(1, 9))
+        self.yVel = random.choice(range(-8, 0)) + random.choice(range(1, 9))
         self.creation_time = time.time()
     
     def move(self):
@@ -543,10 +560,10 @@ class Particle:
         pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.size)
 
     def is_expired(self):
-        return time.time() - self.creation_time > .5
+        return time.time() - self.creation_time > .3
 
 # Function to create particles originating from the center of the screen
-def createParticles(center_x, center_y, num_particles=7):
+def createParticles(center_x, center_y, num_particles=4):
     particles = []
     for i in range(num_particles):  # Create specified number of particles
         particles.append(Particle(center_x, center_y))
@@ -663,8 +680,10 @@ while running:
         physics.tick(FPS)
         #render screen
         w.fill((255,255,255))
+
         physics.draw(w, shadows=True)
         physics.draw(w, shadows=True,light=image,shadowColor=(0,0,0),lightPos=(SCREENWIDTH/2,-100),forces=False)
+        
         for particle in particles:
             particle.draw(w)
         
