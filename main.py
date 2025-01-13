@@ -5,6 +5,9 @@ print("AAAAAAAAAAAAAAA")
 import random
 import pygame
 import math
+import shapely
+from shapely import intersects
+from shapely.geometry import Point, Polygon, LineString
 
 #setup
 SCREENWIDTH = 1000
@@ -46,10 +49,19 @@ def centerOfMass(vertices):
     center = (xCenter, yCenter)
     return (center)
 
-def checkDistance(center, vertices):
-    distance=0
-    for vertice in vertices:
-        print(vertice[0])
+def checkDistance(center_x, center_y, polygon, angle):
+    
+    #ensures intersection
+    line_length = 500
+
+    line_end = Point(center_x + line_length * math.cos(angle), center_y + line_length * math.sin(angle))
+    center = Point(center_x, center_y)
+    line = LineString([center, line_end])
+    intersection = shapely.intersects(polygon, line)
+    if intersection == True:
+        print("intersection found")
+    distance = 0
+
 
     return distance 
 
@@ -377,22 +389,38 @@ class Polygon:
 
 
     def split(self, pieces):
-        center = centerOfMass(self.vertices)
+        center = centerOfMass(self.vertices)    
         center = list(center)
         center_x = center[0]
         center_y = center[1]
 
+        #making the points a polygon in shapely
+        polygon = shapely.geometry.Polygon(self.vertices)
+
         newPoints = []
+        shape = []
         
         angles = sorted([random.uniform(0, 6.28319) for i in range(pieces)])
 
         print(self.vertices)
 
-        for angle in angles:    
-            distance = checkDistance(center, shape)
-            x = center_x + distance * math.cos(angle)
-            y = center_y + distance * math.sin(angle)
-            #pygame.draw.line(w, (1, 1, 1), center, (x, y))
+        for i in range(len(angles)):    
+            distance = checkDistance(center_x, center_y, polygon, angles[i])
+
+            x = center_x + distance * math.cos(angles[i])
+            y = center_y + distance * math.sin(angles[i])
+            newPoints.append((x, y))
+
+        
+        for i in range(len(newPoints)):
+            shape.append(newPoints[i])
+            shape.append(newPoints[i+1])
+            shape.append(center)
+    
+            return Polygon(self.color, shape, center_x, center_y)
+
+    
+            
             
         ...
 
@@ -447,7 +475,8 @@ def createRandomPolygon(color, minSides, maxSides):
 
 lines=[]
 ground = [Ground((50,50,50), 600)]
-shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(),3,10)]
+#shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(),3,10)]
+shapes = [createRandomPolygon(randomColor(),3,10)]
 running = True
 
 
@@ -461,9 +490,9 @@ while running:
         if event.type == pygame.QUIT:
             pygame.quit()
             running = False
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            for shape in shapes:
-                shape.split(3)
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        for shape in shapes:
+            shape.split(5)
         
     
 
