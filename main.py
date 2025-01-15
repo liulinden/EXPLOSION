@@ -52,18 +52,22 @@ def centerOfMass(vertices):
 def checkDistance(center_x, center_y, polygon, angle):
     
     #ensures intersection
-    line_length = 500
+    line_length = 100
 
     line_end = Point(center_x + line_length * math.cos(angle), center_y + line_length * math.sin(angle))
     center = Point(center_x, center_y)
     line = LineString([center, line_end])
-    intersection = shapely.intersects(polygon, line)
-    if intersection == True:
-        print("intersection found")
-    distance = 0
 
+    # intersection = shapely.intersects(polygon, line)
+    # if intersection == True:
+    #     print("intersection found")
+    # else:
+    #     print("no intersection")
 
-    return distance 
+    intersectionPoint = shapely.intersection(polygon, line)
+    newPoint = (intersectionPoint.x, intersectionPoint.y)
+
+    return newPoint
 
 #get magnitude of vector
 def magnitude(cx,cy):
@@ -395,34 +399,31 @@ class Polygon:
         center_y = center[1]
 
         #making the points a polygon in shapely
-        polygon = shapely.geometry.Polygon(self.vertices)
+        polygon = shapely.geometry.LinearRing(self.vertices)
 
         newPoints = []
         shape = []
         
         angles = sorted([random.uniform(0, 6.28319) for i in range(pieces)])
 
-        print(self.vertices)
-
         for i in range(len(angles)):    
-            distance = checkDistance(center_x, center_y, polygon, angles[i])
+            x, y = checkDistance(center_x, center_y, polygon, angles[i])
 
-            x = center_x + distance * math.cos(angles[i])
-            y = center_y + distance * math.sin(angles[i])
+            print(x, y)
             newPoints.append((x, y))
 
-        
-        for i in range(len(newPoints)):
+        newPolygons = []
+
+
+        for i in range(len(newPoints) - 1):
             shape.append(newPoints[i])
             shape.append(newPoints[i+1])
             shape.append(center)
-    
-            return Polygon(self.color, shape, center_x, center_y)
+            newPolygons.append(Polygon(self.color, shape, center_x, center_y))
+            
+        return newPolygons
 
-    
-            
-            
-        ...
+
 
 def createRegularShape(color, sides, radius=1, x=0,y=0):
     #make function that creates a list of points according to parameters
@@ -491,8 +492,24 @@ while running:
             pygame.quit()
             running = False
     if event.type == pygame.MOUSEBUTTONDOWN:
-        for shape in shapes:
-            shape.split(5)
+        shapes_to_add = []
+        shapes_to_remove = []
+        for i in range(len(shapes) - 1, -1, -1):
+            shape = shapes[i]
+            multiShape = shape.split(5)
+            for newShape in multiShape:
+                shapes_to_add.append(multiShape)
+            print(multiShape)
+            shapes_to_remove.append(shape)
+        for shape in shapes_to_add:
+            shapes.append(shape)
+        for shape in shapes_to_remove:
+            shapes.remove(shape)
+  
+
+        
+            
+
         
     
 
@@ -509,6 +526,7 @@ while running:
             # Draw shadows  first
             shape.drawShadow(w, light_source)
             shape.draw(w)
+            
        
             
 
