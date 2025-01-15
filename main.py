@@ -555,7 +555,7 @@ class Particle:
             self.x = x
             self.y = y
             self.color = color
-            self.size = random.randint(3, 9)
+            self.size = random.randint(3, 6)
             self.xVel = random.choice(range(-15, 0)) + random.choice(range(1, 16))
             self.yVel = random.choice(range(-15, 0)) + random.choice(range(1, 16))
             self.creation_time = time.time()
@@ -569,8 +569,8 @@ class Particle:
             self.y = y
             self.color = random.choice([(255, 255, 0), (255, 0, 0), (255, 165, 0)]) 
             self.size = random.randint(10, 20)
-            self.xVel = random.choice(range(-6, 0)) + random.choice(range(1, 7))
-            self.yVel = random.choice(range(-6, 0)) + random.choice(range(1, 7))
+            self.xVel = random.choice(range(-8, 0)) + random.choice(range(1, 9))
+            self.yVel = random.choice(range(-8, 0)) + random.choice(range(1, 9))
             self.creation_time = time.time()
             # def draw(self, surface):
 
@@ -609,7 +609,7 @@ class Particle:
 def createParticles(center_x, center_y, num_particles=3):
     return [Particle(center_x, center_y,False) for i in range(num_particles)]
 
-def expcreateParticles(center_x, center_y, num_particles=13):
+def expcreateParticles(center_x, center_y, num_particles=8):
     out=[]
     for i in range(num_particles):
         out+=[Particle(center_x, center_y,True),Particle(center_x, center_y,False)]
