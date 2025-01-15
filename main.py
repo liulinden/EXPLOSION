@@ -27,7 +27,7 @@ def getArea(vertices):
     for i in range(len(vertices)):
         shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
         area += shoe
-    print(int(area))
+    #print(int(area))
 
     return area
     
@@ -97,6 +97,7 @@ class Ground:
         self.type = "ground"
         self.color= color
         self.y = y
+   
     
     def draw(self, w):
         pygame.draw.rect(w, self.color, pygame.Rect(0,self.y,w.get_width(),w.get_height()-self.y))
@@ -135,6 +136,9 @@ class Polygon:
         self.forces = []
         self.rect = pygame.Rect(0, 0, 10, 10)
         self.updateRect()
+        print("shape: ", self.vertices)
+        print("center: ", centerOfMass(self.vertices))
+        print("\n")
     
     def updateRect(self):
         minx, maxx,miny,maxy=self.vertices[0][0],self.vertices[0][0],self.vertices[0][1],self.vertices[0][1]
@@ -409,7 +413,7 @@ class Polygon:
         for i in range(len(angles)):    
             x, y = checkDistance(center_x, center_y, polygon, angles[i])
 
-            print(x, y)
+            print("new points: ", x, y)
             newPoints.append((x, y))
 
         newPolygons = []
@@ -419,6 +423,8 @@ class Polygon:
             shape.append(newPoints[i])
             shape.append(newPoints[i+1])
             shape.append(center)
+            print("possible new points: ", shape)
+            print("\n")
             newPolygons.append(Polygon(self.color, shape, center_x, center_y))
             
         return newPolygons
@@ -498,8 +504,8 @@ while running:
             shape = shapes[i]
             multiShape = shape.split(5)
             for newShape in multiShape:
-                shapes_to_add.append(multiShape)
-            print(multiShape)
+                shapes_to_add+=multiShape
+            print("new shapes: ", multiShape)
             shapes_to_remove.append(shape)
         for shape in shapes_to_add:
             shapes.append(shape)
