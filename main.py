@@ -395,7 +395,7 @@ class Polygon:
     
     #linear motion
     def simulateRotationalMotion(self,physics,ms):
-
+        return
         #convert to seconds
         s=ms/1000
 
@@ -481,7 +481,7 @@ class Physics:
         self.time = 0
         self.g = GRAVITY
         self.staticColliders = startShapes
-        self.elasticity = .99999999
+        self.elasticity = 0
     
     #do physics for frame
     def tick(self, fps):
@@ -514,7 +514,7 @@ class Physics:
         self.time += finishTime
     
     #draw shapes and colliders
-    def draw(self,w,forces=False,shadows=False,lightPos=(0,0),light=False,shadowColor=(200,200,200)):
+    def draw(self,w,forces=False,shadows=False,particles=False,lightPos=(0,0),light=False,shadowColor=(200,200,200)):
         if shadows:
             if light:
                 w.fill((0,0,0))
@@ -525,8 +525,9 @@ class Physics:
                 shape.drawShadow(w,lightPos,color=shadowColor)
         for shape in self.shapes:
             shape.draw(w)
-        for particle in particles:
-            particle.draw(w)
+        if particles:
+            for particle in particles:
+                particle.draw(w)
         for collider in self.staticColliders:
             collider.draw(w)
         if forces:
@@ -727,13 +728,15 @@ while running:
     #frame stuff
     if running:
 
-        #simulate physics, increase argument here for slow mo
+        #
+        # 
+        #  physics, increase argument here for slow mo
         physics.tick(FPS)
         #render screen
         w.fill((255,255,255))
 
-        physics.draw(w, shadows=True)
-        physics.draw(w, shadows=True,light=image,shadowColor=(0,0,0),lightPos=(SCREENWIDTH/2,-100),forces=False)
+        
+        physics.draw(w, shadows=True,particles=False,light=image,shadowColor=(0,0,0),lightPos=(SCREENWIDTH/2,-100),forces=True)
         
         
         
