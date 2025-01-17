@@ -777,7 +777,6 @@ w.fill((255,255,255))
 GRAVITY = (0,2,0,0)
 
 def createRandomPolygon(color, minSides, maxSides):
-
     center_x = 0
     center_y = 0
 
@@ -799,7 +798,7 @@ def createRandomPolygon(color, minSides, maxSides):
         
         points.append((x, y))
 
-    return Polygon(color, points, shapeX,shapeY)
+    return Polygon(color, points, 0, 0)
 
 def createRegularShape(color, sides, radius=1, x=0,y=0):
     #make function that creates a list of points according to parameters
@@ -833,90 +832,81 @@ running = True
 
 
 
-#main loop
-while running:
+# #main loop
+# while running:
 
-    #check for closing window
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            running = False
-    if event.type == pygame.MOUSEBUTTONDOWN:
-        shapes_to_add = []
-        shapes_to_remove = []
-        for i in range(len(shapes) - 1, -1, -1):
-            shape = shapes[i]
-            multiShape = shape.split(5)
-            for newShape in multiShape:
-                shapes_to_add+=multiShape
-            print("new shapes: ", multiShape)
-            shapes_to_remove.append(shape)
-        for shape in shapes_to_add:
-            shapes.append(shape)
-        for shape in shapes_to_remove:
-            shapes.remove(shape)
-  
+#     #check for closing window
+#     for event in pygame.event.get():
+#         if event.type == pygame.QUIT:
+#             pygame.quit()
+#             running = False
+
+#     if running:
+#         w.fill((255, 255, 255))
+
+#         # Define light source position
+#         light_source = (SCREENWIDTH - 100, 100)
 
         
-            
+#         # Draw shapes and ground
+#         for shape in shapes:
+#             shape.tick()
+#             # Draw shadows  first
+#             shape.drawShadow(w, light_source)
+#             shape.draw(w)          
 
-        
-    
+#         ground[0].draw(w)
 
-    if running:
-        w.fill((255, 255, 255))
-
-        # Define light source position
-        light_source = (SCREENWIDTH - 100, 100)
-
-        
-        # Draw shapes and ground
-        for shape in shapes:
-            shape.tick()
-            # Draw shadows  first
-            shape.drawShadow(w, light_source)
-            shape.draw(w)
-            
-       
-            
-
-        ground[0].draw(w)
-
-        pygame.display.flip()
-        c.tick(60)
+#         pygame.display.flip()
+#         c.tick(60)
 
 
-        c.tick(40)
+#         c.tick(40)
 
-pygame.quit()
+# pygame.quit()
 
 
 
 
  
-# while running:
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             pygame.quit()
-#             running = False
-#     if running:
-#         w.fill((255,255,255))
-#         lines = []
-#         for shape in shapes:
-#             shape.tick()
-#             shape.draw(w)
-#             #shape.drawForces(w)
-#         ground[0].draw(w)
+while running:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            running = False
+    # if running:
+    #     w.fill((255,255,255))
+    #     lines = []
+    #     for shape in shapes:
+    #         shape.tick()
+    #         shape.draw(w)
+    #         #shape.drawForces(w)
+    #     ground[0].draw(w)
         
-#         pygame.display.flip()
-#         c.tick(60)
+        pygame.display.flip()
+        c.tick(60)
         #new shape
-        if event.type == pygame.MOUSEBUTTONDOWN:
-            x,y=pygame.mouse.get_pos()
-            physics.shapes.append(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
-            #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
-            particles.extend(expcreateParticles(x, y, num_particles = 8))
+    if event.type == pygame.MOUSEBUTTONDOWN:
+        x,y=pygame.mouse.get_pos()
+        physics.shapes.append(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
+        #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
+        particles.extend(expcreateParticles(x, y, num_particles = 8))
 
+        # if event.type == pygame.MOUSEBUTTONDOWN:
+        #     shapes_to_add = []
+        #     shapes_to_remove = []
+        #     for i in range(len(shapes) - 1, -1, -1):
+        #         shape = shapes[i]
+        #         multiShape = shape.split(5)
+        #         for newShape in multiShape:
+        #             shapes_to_add+=multiShape
+        #         print("new shapes: ", multiShape)
+        #         shapes_to_remove.append(shape)
+        #     for shape in shapes_to_add:
+        #         shapes.append(shape)
+        #     for shape in shapes_to_remove:
+        #         shapes.remove(shape)
+  
             
 
 
