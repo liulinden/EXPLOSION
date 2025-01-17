@@ -260,6 +260,40 @@ class Polygon:
     def draw(self, surface):
         pygame.draw.polygon(surface, self.color, self.vertices)
 
+    def split(self, pieces):
+        center = centerOfMass(self.vertices)    
+        center = list(center)
+        center_x = center[0]
+        center_y = center[1]
+
+        #making the points a polygon in shapely
+        polygon = shapely.geometry.LinearRing(self.vertices)
+
+        newPoints = []
+        shape = []
+        
+        angles = sorted([random.uniform(0, 6.28319) for i in range(pieces)])
+
+        for i in range(len(angles)):    
+            x, y = checkDistance(center_x, center_y, polygon, angles[i])
+
+            print("new points: ", x, y)
+            newPoints.append((x, y))
+
+        newPolygons = []
+
+
+        for i in range(len(newPoints) - 1):
+            shape.append(newPoints[i])
+            shape.append(newPoints[i+1])
+            shape.append(center)
+            print("possible new points: ", shape)
+            print("\n")
+            newPolygons.append(Polygon(self.color, shape, center_x, center_y))
+            
+        return newPolygons
+    
+
     #def drawForces(self,surface):
     #    for force in self.forces:
     #        pygame.draw.line(surface,(255,0,0),(self.x+force[3],self.y+force[4]),(self.x+force[3]+10*force[1],self.y+force[4]+10*force[2]))
@@ -536,8 +570,6 @@ class Polygon:
     def draw(self, surface):
         pygame.draw.polygon(surface, self.color, self.vertices)
 
-    def split(self):
-        ...
 
 #overarching class
 class Physics:
@@ -598,7 +630,7 @@ class Physics:
             collider.draw(w)
         if forces:
             self.drawForces(w)
-    
+
     #draw forces
     def drawForces(self,w):
         for force in self.forces:
@@ -682,76 +714,6 @@ def expcreateParticles(center_x, center_y, num_particles=8):
         out+=[Particle(center_x, center_y,True),Particle(center_x, center_y,False)]
     return out
 
-def centerOfMass(vertices):
-    area = getArea(vertices)
-    vertices = list(vertices)
-    x = []
-    y = []
-    xCenter = []
-    yCenter = []
-    #split the tuple into a list of x and list of y
-    for i in range(len(vertices)):
-        xVertex, yVertex = vertices[i]
-        x.append(xVertex)
-        y.append(yVertex)
-
-    #complete the summations for x and y coordinates
-    for i in range (len(x) - 1):
-        point = (x[i] + x[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
-        xCenter.append(point)
-    for i in range(len(y) - 1):
-        point = (y[i] + y[i+1]) * (x[i] * y[i+1] - x[i+1] * y[i])
-        yCenter.append(point)
-    yCenter = sum(yCenter)
-    xCenter = sum(xCenter)
-
-    #multiply by 1 over 6 * the Area
-    xCenter = xCenter * (1 / (6 * area))
-    yCenter = yCenter * (1 / (6 * area))
-
-    return xCenter, yCenter
-
-
-#create random polygon
-def createRandomPolygon(color, minSides, maxSides,shapeX,shapeY):
-    
-
-
-    def split(self, pieces):
-        center = centerOfMass(self.vertices)    
-        center = list(center)
-        center_x = center[0]
-        center_y = center[1]
-
-        #making the points a polygon in shapely
-        polygon = shapely.geometry.LinearRing(self.vertices)
-
-        newPoints = []
-        shape = []
-        
-        angles = sorted([random.uniform(0, 6.28319) for i in range(pieces)])
-
-        for i in range(len(angles)):    
-            x, y = checkDistance(center_x, center_y, polygon, angles[i])
-
-            print("new points: ", x, y)
-            newPoints.append((x, y))
-
-        newPolygons = []
-
-
-        for i in range(len(newPoints) - 1):
-            shape.append(newPoints[i])
-            shape.append(newPoints[i+1])
-            shape.append(center)
-            print("possible new points: ", shape)
-            print("\n")
-            newPolygons.append(Polygon(self.color, shape, center_x, center_y))
-            
-        return newPolygons
-
-
-
 def createRegularShape(color, sides, radius=1, x=0,y=0):
     #make function that creates a list of points according to parameters
     
@@ -760,7 +722,6 @@ def createRegularShape(color, sides, radius=1, x=0,y=0):
         arg= math.pi*2*(1/4+1/2/sides+i/sides)
         shape.append((math.cos(arg)*radius,math.sin(arg)*radius))
     return Polygon(color, shape,x,y)
-
 
 
 def randomColor():
@@ -776,7 +737,7 @@ w.fill((255,255,255))
 #constants
 GRAVITY = (0,2,0,0)
 
-def createRandomPolygon(color, minSides, maxSides):
+def createRandomPolygon(color, minSides, maxSides, x=0, y=0):
     center_x = 0
     center_y = 0
 
@@ -793,21 +754,13 @@ def createRandomPolygon(color, minSides, maxSides):
         
         distance = random.uniform(radius/2, radius)
 
-        x = center_x + distance * math.cos(angle)
-        y = center_y + distance * math.sin(angle)
+        tx = center_x + distance * math.cos(angle)
+        ty = center_y + distance * math.sin(angle)
         
-        points.append((x, y))
+        points.append((tx, ty))
 
-    return Polygon(color, points, 0, 0)
+    return Polygon(color, points, x,y)
 
-def createRegularShape(color, sides, radius=1, x=0,y=0):
-    #make function that creates a list of points according to parameters
-    
-    shape=[]
-    for i in range(sides):
-        arg= math.pi*2*(1/4+1/2/sides+i/sides)
-        shape.append((math.cos(arg)*radius,math.sin(arg)*radius))
-    return Polygon(color, shape,x,y)
 
 #setup
 SCREENWIDTH = 1000
@@ -818,7 +771,8 @@ c = pygame.time.Clock()
 w.fill((255,255,255))
 FPS=80
 physics = Physics()
-physics.shapes.append(createRegularShape(randomColor(),5,50,SCREENWIDTH/2,SCREENHEIGHT/2))
+#physics.shapes.append(createRegularShape(randomColor(),5,50,SCREENWIDTH/2,SCREENHEIGHT/2))
+physics.shapes.append(createRandomPolygon(randomColor(),3,10,SCREENWIDTH/2,SCREENHEIGHT/2))
 image = pygame.image.load('circlegradient.png')
 image = pygame.transform.scale(image, (image.get_width() * 2.5, image.get_height() * 2.5))
 #particles = createParticles(center_x, center_y, False, 5)
@@ -826,47 +780,7 @@ particles=[]
 #setup vars
 lines=[]
 ground = [Ground((50,50,50), 600)]
-#shapes = [createRegularShape(randomColor(),3,50,SCREENWIDTH/2,SCREENHEIGHT/2),createRegularShape(randomColor(),10,50,SCREENWIDTH/2,100), createRandomPolygon(randomColor(),3,10)]
-shapes = [createRandomPolygon(randomColor(),3,10)]
 running = True
-
-
-
-# #main loop
-# while running:
-
-#     #check for closing window
-#     for event in pygame.event.get():
-#         if event.type == pygame.QUIT:
-#             pygame.quit()
-#             running = False
-
-#     if running:
-#         w.fill((255, 255, 255))
-
-#         # Define light source position
-#         light_source = (SCREENWIDTH - 100, 100)
-
-        
-#         # Draw shapes and ground
-#         for shape in shapes:
-#             shape.tick()
-#             # Draw shadows  first
-#             shape.drawShadow(w, light_source)
-#             shape.draw(w)          
-
-#         ground[0].draw(w)
-
-#         pygame.display.flip()
-#         c.tick(60)
-
-
-#         c.tick(40)
-
-# pygame.quit()
-
-
-
 
  
 while running:
@@ -874,38 +788,30 @@ while running:
         if event.type == pygame.QUIT:
             pygame.quit()
             running = False
-    # if running:
-    #     w.fill((255,255,255))
-    #     lines = []
-    #     for shape in shapes:
-    #         shape.tick()
-    #         shape.draw(w)
-    #         #shape.drawForces(w)
-    #     ground[0].draw(w)
-        
+
         pygame.display.flip()
         c.tick(60)
         #new shape
-    if event.type == pygame.MOUSEBUTTONDOWN:
-        x,y=pygame.mouse.get_pos()
-        physics.shapes.append(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
-        #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
-        particles.extend(expcreateParticles(x, y, num_particles = 8))
+    # if event.type == pygame.MOUSEBUTTONDOWN:
+    #     x,y=pygame.mouse.get_pos()
+    #     physics.shapes.append(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
+    #     #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
+    #     particles.extend(expcreateParticles(x, y, num_particles = 8))
 
-        # if event.type == pygame.MOUSEBUTTONDOWN:
-        #     shapes_to_add = []
-        #     shapes_to_remove = []
-        #     for i in range(len(shapes) - 1, -1, -1):
-        #         shape = shapes[i]
-        #         multiShape = shape.split(5)
-        #         for newShape in multiShape:
-        #             shapes_to_add+=multiShape
-        #         print("new shapes: ", multiShape)
-        #         shapes_to_remove.append(shape)
-        #     for shape in shapes_to_add:
-        #         shapes.append(shape)
-        #     for shape in shapes_to_remove:
-        #         shapes.remove(shape)
+        if event.type == pygame.MOUSEBUTTONDOWN:
+            shapes_to_add = []
+            shapes_to_remove = []
+            for i in range(len(physics.shapes) - 1, -1, -1):
+                shape = physics.shapes[i]
+                multiShape = shape.split(5)
+                for newShape in multiShape:
+                    shapes_to_add+=multiShape
+                print("new shapes: ", multiShape)
+                shapes_to_remove.append(shape)
+            for shape in shapes_to_add:
+                physics.shapes.append(shape)
+            for shape in shapes_to_remove:
+                physics.shapes.remove(shape)
   
             
 
@@ -925,9 +831,6 @@ while running:
 
         physics.draw(w, shadows=True)
         physics.draw(w, shadows=True,light=image,shadowColor=(0,0,0),lightPos=(SCREENWIDTH/2,-100),forces=False)
-        
-        
-        
 
         #update screen and tick
         pygame.display.flip()
