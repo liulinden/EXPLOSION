@@ -610,8 +610,8 @@ class Physics:
                 shape.drawShadow(w,lightPos,color=shadowColor)
         for shape in self.shapes:
             shape.draw(w)
-        # for particle in particles:
-        #     particle.draw(w)
+        for particle in particles:
+            particle.draw(w)
         for collider in self.staticColliders:
             collider.draw(w)
         if forces:
@@ -803,15 +803,10 @@ while running:
     # c.tick(60)
         #new shape
 
-    
-  
-            
-
-
-    # # Update particles
-    # particles = [particle for particle in particles if not particle.is_expired()]
-    # for particle in particles:
-    #     particle.move()
+    # Update particles
+    particles = [particle for particle in particles if not particle.is_expired()]
+    for particle in particles:
+        particle.move()
         
     #frame stuff
     if running:
