@@ -353,6 +353,7 @@ class Polygon:
         if len(collisions) > 0 and current_time - self.tater > cooldown:
             for collision in collisions:
                 particles.extend(createParticles(collision[1][0], collision[1][1], num_particles = 3))
+                physics.start_shake(intensity=7, duration=5)
             self.tater = current_time
 
 
@@ -565,8 +566,39 @@ class Physics:
         self.time = 0
         self.g = GRAVITY
         self.staticColliders = startShapes
-        self.elasticity = .99999999
-    
+        self.elasticity = 1
+
+        # Screen shake attributes
+        self.shake_intensity = 90
+        self.shake_duration = 3
+        self.shake_offset = (0, 0)
+
+    def start_shake(self, intensity, duration):
+        """Start the screen shake effect."""
+        self.shake_intensity = intensity
+        self.shake_duration = duration
+
+    def update_shake(self):
+        """Update the screen shake effect each frame."""
+        if self.shake_duration > 0:
+            self.shake_duration -= 1
+            self.shake_offset = (
+                random.randint(-self.shake_intensity, self.shake_intensity),
+                random.randint(-self.shake_intensity, self.shake_intensity),
+            )
+        else:
+            self.shake_offset = (0, 0)
+
+    def get_shake_offset(self):
+        """Get the current offset for the screen."""
+        return self.shake_offset
+
+    def update(self, delta_time):
+        """Update the physics logic and shake effect."""
+        self.time += delta_time
+
+        # Update the screen shake effect
+        self.update_shake()
     #do physics for frame
     def tick(self, fps):
             
@@ -625,8 +657,15 @@ class Physics:
         ...
 
 
-    def addShape(self, vertices):
-        ...
+    def addShape(self, shape):
+        colliders=physics.shapes+physics.staticColliders
+        collisions = shape.checkCollisions(colliders)
+        if len(collisions) == 0 :
+            self.shapes.append(shape)
+            #particles.extend(expcreateParticles(x,y, num_particles = 8))
+            #physics.start_shake(intensity=10, duration=20)
+        
+
 
 class Particle:
 
@@ -787,8 +826,21 @@ while running:
                 for shape in shapes_to_remove:
                     physics.shapes.remove(shape)
         if event.type == pygame.MOUSEBUTTONDOWN:
-                x,y=pygame.mouse.get_pos()
-                physics.shapes.append(createRandomPolygon(randomColor(),random.randint(3,7),10,x,y))
+            x,y=pygame.mouse.get_pos()
+            
+            
+            addShape =True
+            for shape in physics.shapes:
+                if shape.rect.collidepoint(x, y):
+                    print("AAAAAAAAAAAAAAAAA")
+                    particles.extend(expcreateParticles(x,y, num_particles = 8))
+                    physics.start_shake(intensity=10, duration=20)
+                    
+                    addShape = False
+            if addShape:
+                
+                physics.addShape(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
+
                 #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
                 particles.extend(expcreateParticles(x, y, num_particles = 8))
 
