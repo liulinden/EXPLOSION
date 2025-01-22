@@ -17,9 +17,11 @@ c = pygame.time.Clock()
 w.fill((255,255,255))
 
 import time
+
 pygame.init()
 
 # Basic Functions
+
 
 exp = False
 
@@ -144,7 +146,7 @@ class Ground:
         self.mass=-1
     
     def draw(self, w):
-        pygame.draw.rect(w, self.color, pygame.Rect(0,self.y,w.get_width(),w.get_height()-self.y))
+        pygame.draw.rect(w, self.color, pygame.Rect(offset_x,self.y+offset_y,w.get_width(),100+w.get_height()-self.y))
 
 #wall class
 class Wall:
@@ -164,9 +166,9 @@ class Wall:
     
     def draw(self, w):
         if self.type=="wallRight":
-            pygame.draw.rect(w, self.color, pygame.Rect(self.x,0,w.get_width()-self.x,w.get_height()))
+            pygame.draw.rect(w, self.color, pygame.Rect(self.x +offset_x,-100 +offset_y,w.get_width()-self.x+100,w.get_height()+200))
         else:
-            pygame.draw.rect(w, self.color, pygame.Rect(0,0,self.x,w.get_height()))
+            pygame.draw.rect(w, self.color, pygame.Rect(-100 +offset_x,-100 +offset_y,100+self.x,200+w.get_height()))
 
 
 #polygon class
@@ -551,10 +553,16 @@ class Polygon:
             shadow_v2 = (next_vertex[0] + dx2 * shadow_length, next_vertex[1] + dy2 * shadow_length)
 
             # Close and fill the shadow polygon
-            pygame.draw.polygon(surface, color, [current_vertex, next_vertex, shadow_v2, shadow_v1])
+            pygame.draw.polygon(surface, color, self.getOffsetVertices([current_vertex, next_vertex, shadow_v2, shadow_v1],offset_x,offset_y))
 
     def draw(self, surface):
-        pygame.draw.polygon(surface, self.color, self.vertices)
+        pygame.draw.polygon(surface, self.color,  self.getOffsetVertices(self.vertices,offset_x, offset_y))
+
+    def getOffsetVertices(self, vertices, offsetX, offsetY):
+        newVertices = []
+        for vertex in vertices:
+            newVertices.append((vertex[0] + offsetX, vertex[1] + offsetY))
+        return newVertices
 
 
 #overarching class
@@ -566,8 +574,39 @@ class Physics:
         self.time = 0
         self.g = GRAVITY
         self.staticColliders = startShapes
-        self.elasticity = .99999999
-    
+        self.elasticity = .9999
+
+        # Screen shake attributes
+        self.shake_intensity = 90
+        self.shake_duration = 3
+        self.shake_offset = (0, 0)
+
+    def start_shake(self, intensity, duration):
+        """Start the screen shake effect."""
+        self.shake_intensity = intensity
+        self.shake_duration = duration
+
+    def update_shake(self):
+        """Update the screen shake effect each frame."""
+        if self.shake_duration > 0:
+            self.shake_duration -= 1
+            self.shake_offset = (
+                random.randint(-self.shake_intensity, self.shake_intensity),
+                random.randint(-self.shake_intensity, self.shake_intensity),
+            )
+        else:
+            self.shake_offset = (0, 0)
+
+    def get_shake_offset(self):
+        """Get the current offset for the screen."""
+        return self.shake_offset
+
+    def update(self, delta_time):
+        """Update the physics logic and shake effect."""
+        self.time += delta_time
+
+        # Update the screen shake effect
+        self.update_shake()
     #do physics for frame
     def tick(self, fps):
             
@@ -626,8 +665,13 @@ class Physics:
         ...
 
 
-    def addShape(self, vertices):
-        ...
+    def addShape(self, shape):
+        colliders=physics.shapes+physics.staticColliders
+        collisions = shape.checkCollisions(colliders)
+        if len(collisions) == 0 :
+            self.shapes.append(shape)
+        
+
 
 class Particle:
 
@@ -673,7 +717,7 @@ class Particle:
             # Draw the triangle
             pygame.draw.polygon(surface, self.color, [point1, point2, point3])
         else: 
-            pygame.draw.circle(surface, self.color, (int(self.x), int(self.y)), self.size)
+            pygame.draw.circle(surface, self.color, (int(self.x) + offset_x, int(self.y) + offset_y), self.size)
             
 
 
@@ -765,6 +809,7 @@ image = pygame.transform.scale(image, (image.get_width() * 2.5, image.get_height
 particles=[]
 #setup vars
 lines=[]
+clock = pygame.time.Clock()
 ground = [Ground((50,50,50), 600)]
 running = True
 pygame.init()
@@ -788,16 +833,30 @@ while running:
                 for shape in shapes_to_remove:
                     physics.shapes.remove(shape)
         if event.type == pygame.MOUSEBUTTONDOWN:
-                x,y=pygame.mouse.get_pos()
-                physics.shapes.append(createRandomPolygon(randomColor(),random.randint(3,7),10,x,y))
+            x,y=pygame.mouse.get_pos()
+            
+            
+            addShape =True
+            for shape in physics.shapes:
+                if shape.rect.collidepoint(x, y):
+                    print("AAAAAAAAAAAAAAAAA")
+                    
+                    addShape = False
+            if addShape:
+                
+                physics.addShape(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
+                particles.extend(expcreateParticles(x,y, num_particles = 8))
+                physics.start_shake(intensity=10, duration=20)
                 #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
-                particles.extend(expcreateParticles(x, y, num_particles = 8))
+            
+            
 
-    if event.type == pygame.QUIT:
-        pygame.quit()
-        running = False
-        print("quit!")
+             # Update physics
+    delta_time = clock.get_time() / 1000.0
+    physics.update(delta_time)
 
+    # Apply the shake offset
+    offset_x, offset_y = physics.get_shake_offset()       
 
     # pygame.display.flip()
     # c.tick(60)
@@ -816,7 +875,7 @@ while running:
         #render screen
         w.fill((255,255,255))
 
-        physics.draw(w, shadows=True)
+        #physics.draw(w, shadows=True)
         physics.draw(w, shadows=True,light=image,shadowColor=(0,0,0),lightPos=(SCREENWIDTH/2,-100),forces=False)
 
         #update screen and tick
