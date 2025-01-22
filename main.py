@@ -173,7 +173,7 @@ class Wall:
 
 #polygon class
 class Polygon:
-    def __init__(self, color, shape, x=0, y=0):
+    def __init__(self, color, shape, x=0, y=0, offsetCoords = True):
         global id
         
         self.type = "polygon"
@@ -196,21 +196,25 @@ class Polygon:
 
         #find center of mass and set self.x and self.y accordingly
         offsetX,offsetY=centerOfMass(shape)
+        if not offsetCoords:
+            self.x+=offsetX
+            self.y+=offsetY
 
         #offset vertex coordinates
         self.vertices = []
         for vertex in shape:
-            self.vertices.append([vertex[0]+x-offsetX,vertex[1]+y-offsetY])
+            self.vertices.append([vertex[0]-offsetX+self.x,vertex[1]+self.y-offsetY])
+        print(self.vertices)
 
         #velocities (x,y,angle)
         self.xVel = 0#random.randint(-10,10) #4
-        self.yVel = -10
+        self.yVel = 0
         self.aVel = 0
 
         self.forces= []
 
         #temporary
-        self.rotate(1)
+        #self.rotate(1)
 
         #rect
         self.rect=pygame.Rect(0,0,10,10)
@@ -272,12 +276,7 @@ class Polygon:
             shape.append(newPoints[i])
             shape.append(newPoints[i+1])
             shape.append(center)
-            #print("new shape: ", shape)
-            newCenter = centerOfMass(shape)
-            #print("new center, ", newCenter)
-            newCenter_x = newCenter[0]
-            newCenter_y = newCenter[1]
-            newPolygons.append(Polygon(self.color, shape, newCenter_x, newCenter_y))
+            newPolygons.append(Polygon(self.color, shape, 0, 0, False))
             shape.clear()            
         return newPolygons
     
@@ -393,7 +392,7 @@ class Polygon:
     #applyForces
     def applyForce(self, force):
         physics.forces.append([force[3]+self.x,force[4]+self.y,force[1]/force[5]/300,force[2]/force[5]/300])
-    
+
         #print(physics.forces)
         self.xVel+=force[1]/self.mass
         self.yVel+=force[2]/self.mass
