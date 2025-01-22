@@ -489,7 +489,7 @@ class Physics:
         self.time = 0
         self.g = GRAVITY
         self.staticColliders = startShapes
-        self.elasticity = .99999
+        self.elasticity = .9999
 
         # Screen shake attributes
         self.shake_intensity = 90
@@ -580,8 +580,13 @@ class Physics:
         ...
 
 
-    def addShape(self, vertices):
-        ...
+    def addShape(self, shape):
+        colliders=physics.shapes+physics.staticColliders
+        collisions = shape.checkCollisions(colliders)
+        if len(collisions) == 0 :
+            self.shapes.append(shape)
+        
+
 
 class Particle:
 
@@ -752,10 +757,22 @@ while running:
         #new shape
         if event.type == pygame.MOUSEBUTTONDOWN:
             x,y=pygame.mouse.get_pos()
-            physics.shapes.append(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
-            #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
-            particles.extend(expcreateParticles(x, y, num_particles = 8))
-            physics.start_shake(intensity=10, duration=20)
+            
+            
+            addShape =True
+            for shape in physics.shapes:
+                if shape.rect.collidepoint(x, y):
+                    print("AAAAAAAAAAAAAAAAA")
+                    
+                    addShape = False
+            if addShape:
+                
+                physics.addShape(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
+                particles.extend(expcreateParticles(x,y, num_particles = 8))
+                physics.start_shake(intensity=10, duration=20)
+                #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
+            
+            
 
              # Update physics
     delta_time = clock.get_time() / 1000.0
