@@ -833,6 +833,7 @@ while running:
             for shape in physics.shapes:
                 if shape.rect.collidepoint(x, y):
                     print("AAAAAAAAAAAAAAAAA")
+                    
                     particles.extend(expcreateParticles(x,y, num_particles = 8))
                     physics.start_shake(intensity=10, duration=20)
                     
