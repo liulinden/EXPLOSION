@@ -144,7 +144,7 @@ class Ground:
         self.mass=-1
     
     def draw(self, w):
-        pygame.draw.rect(w, self.color, pygame.Rect(0,self.y,w.get_width(),w.get_height()-self.y))
+        pygame.draw.rect(w, self.color, pygame.Rect(offset_x,self.y+offset_y,w.get_width(),w.get_height()-self.y))
 
 #wall class
 class Wall:
@@ -164,9 +164,9 @@ class Wall:
     
     def draw(self, w):
         if self.type=="wallRight":
-            pygame.draw.rect(w, self.color, pygame.Rect(self.x,0,w.get_width()-self.x,w.get_height()))
+            pygame.draw.rect(w, self.color, pygame.Rect(self.x+offset_x,-100+offset_y,w.get_width()-self.x+100,w.get_height()+200))
         else:
-            pygame.draw.rect(w, self.color, pygame.Rect(0,0,self.x,w.get_height()))
+            pygame.draw.rect(w, self.color, pygame.Rect(-100+offset_x,0,100+self.x,w.get_height()))
 
 
 #polygon class
@@ -353,7 +353,7 @@ class Polygon:
         if len(collisions) > 0 and current_time - self.tater > cooldown:
             for collision in collisions:
                 particles.extend(createParticles(collision[1][0], collision[1][1], num_particles = 3))
-                physics.start_shake(intensity=7, duration=5)
+                #physics.start_shake(intensity=7, duration=5)
             self.tater = current_time
 
 
@@ -551,11 +551,15 @@ class Polygon:
             shadow_v2 = (next_vertex[0] + dx2 * shadow_length, next_vertex[1] + dy2 * shadow_length)
 
             # Close and fill the shadow polygon
-            pygame.draw.polygon(surface, color, [current_vertex, next_vertex, shadow_v2, shadow_v1])
+            pygame.draw.polygon(surface, color, self.getOffsetVertices([current_vertex, next_vertex, shadow_v2, shadow_v1],offset_x,offset_y))
 
     def draw(self, surface):
-        pygame.draw.polygon(surface, self.color, self.vertices)
-
+        pygame.draw.polygon(surface, self.color, self.getOffsetVertices(self.vertices,offset_x,offset_y))
+    def getOffsetVertices(self, vertices, offsetX,offsetY):
+        newVertices = []
+        for vertex in vertices:
+            newVertices.append((vertex[0]+offsetX,vertex[1]+offsetY))
+        return newVertices
 
 #overarching class
 class Physics:
@@ -809,22 +813,6 @@ pygame.init()
  
 while running:
     for event in pygame.event.get():
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_s:
-                shapes_to_add = []
-                shapes_to_remove = []
-                for i in range(len(physics.shapes) - 1, -1, -1):
-                    shape = physics.shapes[i]
-                    multiShape = shape.split(5)
-                    print("split!")
-                    for newShape in multiShape:
-                        shapes_to_add+=multiShape
-                    #print("new shapes: ", multiShape)
-                    shapes_to_remove.append(shape)
-                for shape in shapes_to_add:
-                    physics.shapes.append(shape)
-                for shape in shapes_to_remove:
-                    physics.shapes.remove(shape)
         if event.type == pygame.MOUSEBUTTONDOWN:
             x,y=pygame.mouse.get_pos()
             
@@ -833,11 +821,18 @@ while running:
             for shape in physics.shapes:
                 if shape.rect.collidepoint(x, y):
                     print("AAAAAAAAAAAAAAAAA")
-                    
+                    multiShape = shape.split(5)
+                    print("split!")
+                    for newShape in multiShape:
+                        physics.shapes.append(newShape)
+                    #print("new shapes: ", multiShape)
+                    physics.shapes.remove(shape)
+
                     particles.extend(expcreateParticles(x,y, num_particles = 8))
                     physics.start_shake(intensity=10, duration=20)
                     
                     addShape = False
+                    break
             if addShape:
                 
                 physics.addShape(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
@@ -845,15 +840,18 @@ while running:
                 #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
                 particles.extend(expcreateParticles(x, y, num_particles = 8))
 
-    if event.type == pygame.QUIT:
-        pygame.quit()
-        running = False
-        print("quit!")
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            running = False
+            print("quit!")
 
 
     # pygame.display.flip()
     # c.tick(60)
         #new shape
+    delta_time=c.get_time()/1000
+    physics.update(delta_time)
+    offset_x,offset_y=physics.get_shake_offset()
 
     # Update particles
     particles = [particle for particle in particles if not particle.is_expired()]
@@ -868,7 +866,7 @@ while running:
         #render screen
         w.fill((255,255,255))
 
-        physics.draw(w, shadows=True)
+        #physics.draw(w, shadows=True)
         physics.draw(w, shadows=True,light=image,shadowColor=(0,0,0),lightPos=(SCREENWIDTH/2,-100),forces=False)
 
         #update screen and tick
