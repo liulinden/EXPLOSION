@@ -839,8 +839,17 @@ while running:
             addShape =True
             for shape in physics.shapes:
                 if shape.rect.collidepoint(x, y):
-                    print("AAAAAAAAAAAAAAAAA")
-                    
+                    shapes_to_add = []
+                    shapes_to_remove = []
+                    multiShape = shape.split(5)
+                    for newShape in multiShape:
+                        shapes_to_add+=multiShape
+                    shapes_to_remove.append(shape)
+                    for shape in shapes_to_add:
+                        physics.shapes.append(shape)
+                    for shape in shapes_to_remove:
+                        physics.shapes.remove(shape)
+
                     addShape = False
             if addShape:
                 
