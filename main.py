@@ -269,6 +269,7 @@ class Polygon:
         if len(collisions) > 0 and current_time - self.tater > cooldown:
             for collision in collisions:
                 particles.extend(createParticles(collision[1][0], collision[1][1], num_particles = 3))
+                physics.start_shake(intensity=7, duration=5)
             self.tater = current_time
 
 
@@ -489,7 +490,7 @@ class Physics:
         self.time = 0
         self.g = GRAVITY
         self.staticColliders = startShapes
-        self.elasticity = .9999
+        self.elasticity = 1
 
         # Screen shake attributes
         self.shake_intensity = 90
@@ -585,6 +586,8 @@ class Physics:
         collisions = shape.checkCollisions(colliders)
         if len(collisions) == 0 :
             self.shapes.append(shape)
+            #particles.extend(expcreateParticles(x,y, num_particles = 8))
+            #physics.start_shake(intensity=10, duration=20)
         
 
 
@@ -763,13 +766,14 @@ while running:
             for shape in physics.shapes:
                 if shape.rect.collidepoint(x, y):
                     print("AAAAAAAAAAAAAAAAA")
+                    particles.extend(expcreateParticles(x,y, num_particles = 8))
+                    physics.start_shake(intensity=10, duration=20)
                     
                     addShape = False
             if addShape:
                 
                 physics.addShape(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
-                particles.extend(expcreateParticles(x,y, num_particles = 8))
-                physics.start_shake(intensity=10, duration=20)
+
                 #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
             
             
