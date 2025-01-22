@@ -99,6 +99,9 @@ class Ground:
     
     def draw(self, w):
         pygame.draw.rect(w, self.color, pygame.Rect(0,self.y,w.get_width(),w.get_height()-self.y))
+    
+    def getEssentialMass(self, a,b,c,maxDepth=0):
+        return -1
 
 #wall class
 class Wall:
@@ -121,6 +124,9 @@ class Wall:
             pygame.draw.rect(w, self.color, pygame.Rect(self.x,0,w.get_width()-self.x,w.get_height()))
         else:
             pygame.draw.rect(w, self.color, pygame.Rect(0,0,self.x,w.get_height()))
+    
+    def getEssentialMass(self, a,b,c,maxDepth=0):
+        return -1
 
 
 #polygon class
@@ -306,8 +312,8 @@ class Polygon:
         physics.forces.append([force[3]+self.x,force[4]+self.y,force[1]/force[5]/300,force[2]/force[5]/300])
     
         #print(physics.forces)
-        self.xVel+=force[1]/self.mass
-        self.yVel+=force[2]/self.mass
+        #self.xVel+=force[1]/self.mass
+        #self.yVel+=force[2]/self.mass
         if (force[3]!=0 or force[4]!=0):
             #print(physics.forces)
             refAngle,lever=toPolar(force[3],force[4])
@@ -317,11 +323,36 @@ class Polygon:
             #probably should be +=
             #self.aVel+=tanComp*lever/self.inertia
             da=tanComp*lever/self.inertia
-            if da*self.aVel<0:
-                self.aVel+=da
+            self.aVel+=da
+            #if da*self.aVel<0:
+            #    self.aVel+=da
+            #else:
+            #    self.aVel=max(self.aVel,da)
+            
+            dx,dy=toComponents(math.pi+refAngle,r)
+            self.xVel+=dx/self.mass
+            self.yVel+=dy/self.mass
+        else:
+            self.xVel+=force[1]/self.mass
+            self.yVel+=force[2]/self.mass
+
+    def getEssentialMass(self, colliders, dx,dy,maxDepth=5):
+        if maxDepth==0:
+            return self.mass
+        essentialMass=self.mass
+        self.transform(dx,dy,0)
+        collisions=self.checkCollisions(colliders)
+        for collision in collisions:
+            eMass2=collision[0].getEssentialMass(colliders, dx, dy, maxDepth-1)
+            if eMass2==-1:
+                essentialMass=-1
+                break
             else:
-                self.aVel=max(self.aVel,da)
-                    
+                essentialMass+=eMass2
+        self.transform(-dx,-dy,0)
+        return essentialMass
+
+
     #simulate physics for ms milliseconds
     def simulate(self, physics, ms):
 
@@ -377,28 +408,45 @@ class Polygon:
                 netVel, trash = toComponents(a-angle,r)
                 a,r=toPolar(colliderXVel, colliderYVel)
                 colliderVel, trash = toComponents(a-angle,r)
+                
+                dx,dy=math.cos(angle),math.sin(angle)
+                mass1,mass2=self.getEssentialMass(colliders,dx,dy),collider.getEssentialMass(colliders,dx,dy)
+                
+               
 
                 #calculate force
-                if collider.mass==-1:
-                    force = (1+physics.elasticity)*self.mass*(netVel-colliderVel)
+                if mass1==-1:
+                    if mass2==-1:
+                        #stop speed cuz stuck
+                        #dx,dy=toComponents(angle,netVel)
+                        #self.xVel-=dx/self.mass
+                        #self.yVel-=dy/self.mass
+                        force=0
+                    else:
+                        force=-(1+physics.elasticity)*mass2*(colliderVel-netVel)
                 else:
-                    force=-(1+physics.elasticity)*self.mass*collider.mass*(colliderVel-netVel)/(self.mass+collider.mass)
-                    #force = self.mass*collider.mass*(netVel-colliderVel)/(self.mass+collider.mass)
+                    if mass2==-1:
+                        force = (1+physics.elasticity)*mass1*(netV el-colliderVel)
+                    else:
+                        force=-(1+physics.elasticity)*mass1*mass2*(colliderVel-netVel)/(mass1+mass2)
 
                 forceX, forceY = toComponents(angle,force)
                 #print(forceX,forceY)
                 #print(self.yVel,netVel,self.yVel*self.mass,forceY,"\n")
                 #add forces
-                self.applyForce(['N',-forceX,-forceY,contact[0]-self.x,contact[1]-self.y,ms])
-                if collider.type=="polygon":
+                if mass1!=-1:
+                    self.applyForce(['N',-forceX,-forceY,contact[0]-self.x,contact[1]-self.y,ms])
+                if mass2!=-1:
                     collider.applyForce(['N',forceX,forceY,contact[0]-collider.x,contact[1]-collider.y,ms])
+                elif mass1==-1:
+                    print(angle, "both unmoveables??? what the heck????")
     
     #linear motion
     def simulateRotationalMotion(self,physics,ms):
-        return
+        #return
         #convert to seconds
         s=ms/1000
-
+        print(self.aVel*s)
         #move shape
         self.transform(0,0,self.aVel*s)
 
@@ -417,31 +465,45 @@ class Polygon:
                 #get net velocities at point of contact
                 colliderXVel, colliderYVel = 0, 0
                 if collider.type=="polygon":
-                    colliderXVel, colliderYVel = collider.rotationalForce(contact[0],contact[1])
-                netXVel, netYVel = self.rotationalForce(contact[0],contact[1])
+                    colliderXVel, colliderYVel = collider.rotationalForce(contact[0]-collider.x,contact[1]-collider.y)
+                netXVel, netYVel = self.rotationalForce(contact[0]-collider.x,contact[1]-collider.y)
                 print(netXVel,netYVel)
                 
-                #isolate relevant velocities
-                a,r=toPolar(netXVel, netYVel)
-                netVel, trash = toComponents(a-angle,r)
-                a,r=toPolar(colliderXVel, colliderYVel)
-                colliderVel, trash = toComponents(a-angle,r)
+                if netYVel>0:
+                    #isolate relevant velocities
+                    a,r=toPolar(netXVel, netYVel)
+                    netVel, trash = toComponents(a-angle,r)
+                    a,r=toPolar(colliderXVel, colliderYVel)
+                    colliderVel, trash = toComponents(a-angle,r)
 
-                #calculate force
-                if collider.mass==-1:
-                    force = (1+physics.elasticity)*self.mass*(netVel-colliderVel)
-                else:
-                    force=-(1+physics.elasticity)*self.mass*collider.mass*(colliderVel-netVel)/(self.mass+collider.mass)
-                    #force = self.mass*collider.mass*(netVel-colliderVel)/(self.mass+collider.mass)
+                    dx,dy=math.cos(angle),math.sin(angle)
+                    mass1,mass2=self.getEssentialMass(colliders,dx,dy),collider.getEssentialMass(colliders,dx,dy)
+                    
 
-                forceX, forceY = toComponents(angle,force)
-                #print(forceX,forceY)
-                #print(self.yVel,netVel,self.yVel*self.mass,forceY,"\n")
-                #add forces
-                self.applyForce(['N',-forceX,-forceY,contact[0]-self.x,contact[1]-self.y,ms])
-                if collider.type=="polygon":
-                    collider.applyForce(['N',forceX,forceY,contact[0]-collider.x,contact[1]-collider.y,ms])
+                    #calculate force
+                    if mass1==-1:
+                        if mass2==-1:
+                            force=0
+                        else:
+                            force=-(1+physics.elasticity)*mass2*(colliderVel-netVel)
+                    else:
+                        if mass2==-1:
+                            force = (1+physics.elasticity)*mass1*(netVel-colliderVel)
+                        else:
+                            force=-(1+physics.elasticity)*mass1*mass2*(colliderVel-netVel)/(mass1+mass2)
 
+                    forceX, forceY = toComponents(angle,force)
+                    
+                    print(forceX,forceY)
+                    print()
+                    if mass1!=-1:
+                        self.applyForce(['N',-forceX,-forceY,contact[0]-self.x,contact[1]-self.y,ms])
+                    if mass2!=-1:
+                        collider.applyForce(['N',forceX,forceY,contact[0]-collider.x,contact[1]-collider.y,ms])
+                    elif mass1==-1:
+                        print(angle, "both unmoveables??? what the heck????")
+                
+                
     def maxMovement(self):
         return magnitude(self.xVel,self.yVel)+abs(self.aVel)*self.radius
 
@@ -582,9 +644,9 @@ class Particle:
             angle = math.atan2(self.yVel, self.xVel)
             # Triangle vertices
             point1 = (self.x + self.size * math.cos(angle), self.y + self.size * math.sin(angle))
-            point2 = (self.x + self.size * math.cos(angle + math.radians(120)), 
+            point2 = (self.x + self.size * math.cos(angle + math.radians(120)),
                     self.y + self.size * math.sin(angle + math.radians(120)))
-            point3 = (self.x + self.size * math.cos(angle - math.radians(120)), 
+            point3 = (self.x + self.size * math.cos(angle - math.radians(120)),
                     self.y + self.size * math.sin(angle - math.radians(120)))
             # Draw the triangle
             pygame.draw.polygon(surface, self.color, [point1, point2, point3])
