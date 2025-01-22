@@ -25,17 +25,6 @@ exp = False
 
 #
 #get area
-def getArea(vertices):
-    vertices = list(vertices)
-    area = 0
-    x = []
-    y = []
-    for i in range(len(vertices)):
-        shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
-        area += shoe
-    #print(int(area))
-
-    return area
     
 def centerOfMass(vertices):
     area = getArea(vertices)
@@ -63,12 +52,6 @@ def checkDistance(center_x, center_y, polygon, angle):
     line_end = Point(center_x + line_length * math.cos(angle), center_y + line_length * math.sin(angle))
     center = Point(center_x, center_y)
     line = LineString([center, line_end])
-
-    # intersection = shapely.intersects(polygon, line)
-    # if intersection == True:
-    #     print("intersection found")
-    # else:
-    #     print("no intersection")
 
     intersectionPoint = shapely.intersection(polygon, line)
     newPoint = (intersectionPoint.x, intersectionPoint.y)
@@ -105,7 +88,7 @@ def getArea(vertices):
     for i in range(len(vertices)):
         shoe = abs((vertices[i][0]*vertices[(i+1) % len(vertices)][1])-(vertices[(i+1) % len(vertices)][0]*vertices[i][1]))/2
         area += shoe
-    print(int(area))
+    #print(int(area))
     return area
 
 def getIntersection(seg1,seg2, segment=True):
@@ -207,7 +190,7 @@ class Polygon:
         #inertia is fakely calculated
         self.mass=getArea(shape)
         self.inertia=math.pow(self.mass,2)*5
-        print(self.mass)
+        # print(self.mass)
 
         #find center of mass and set self.x and self.y accordingly
         offsetX,offsetY=centerOfMass(shape)
@@ -230,9 +213,9 @@ class Polygon:
         #rect
         self.rect=pygame.Rect(0,0,10,10)
         self.updateRect()
-        print("shape: ", self.vertices)
-        print("center: ", centerOfMass(self.vertices))
-        print("\n")
+        #print("shape: ", self.vertices)
+        #print("center: ", centerOfMass(self.vertices))
+        #print("\n")
     
 
         #biggest radius
@@ -277,7 +260,7 @@ class Polygon:
         for i in range(len(angles)):    
             x, y = checkDistance(center_x, center_y, polygon, angles[i])
 
-            print("new points: ", x, y)
+            #print("new points: ", x, y)
             newPoints.append((x, y))
 
         newPolygons = []
@@ -287,10 +270,13 @@ class Polygon:
             shape.append(newPoints[i])
             shape.append(newPoints[i+1])
             shape.append(center)
-            print("possible new points: ", shape)
-            print("\n")
-            newPolygons.append(Polygon(self.color, shape, center_x, center_y))
-            
+            #print("new shape: ", shape)
+            newCenter = centerOfMass(shape)
+            #print("new center, ", newCenter)
+            newCenter_x = newCenter[0]
+            newCenter_y = newCenter[1]
+            newPolygons.append(Polygon(self.color, shape, newCenter_x, newCenter_y))
+            shape.clear()            
         return newPolygons
     
 
@@ -438,7 +424,7 @@ class Polygon:
 
         #safeguard
         if self.maxMovement() > 10000:
-            print(self.xVel,self.yVel,self.aVel, physics.forces)
+            #print(self.xVel,self.yVel,self.aVel, physics.forces)
             physics.shapes.remove(self)
 
     #linear motion
@@ -520,7 +506,7 @@ class Polygon:
                 if collider.type=="polygon":
                     colliderXVel, colliderYVel = collider.rotationalForce(contact[0],contact[1])
                 netXVel, netYVel = self.rotationalForce(contact[0],contact[1])
-                print(netXVel,netYVel)
+                # print(netXVel,netYVel)
                 
                 #isolate relevant velocities
                 a,r=toPolar(netXVel, netYVel)
@@ -624,8 +610,8 @@ class Physics:
                 shape.drawShadow(w,lightPos,color=shadowColor)
         for shape in self.shapes:
             shape.draw(w)
-        for particle in particles:
-            particle.draw(w)
+        # for particle in particles:
+        #     particle.draw(w)
         for collider in self.staticColliders:
             collider.draw(w)
         if forces:
@@ -781,45 +767,51 @@ particles=[]
 lines=[]
 ground = [Ground((50,50,50), 600)]
 running = True
-
+pygame.init()
  
 while running:
     for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            running = False
-
-        pygame.display.flip()
-        c.tick(60)
-        #new shape
-    # if event.type == pygame.MOUSEBUTTONDOWN:
-    #     x,y=pygame.mouse.get_pos()
-    #     physics.shapes.append(createRegularShape(randomColor(),random.randint(3,7),50,x,y))
-    #     #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
-    #     particles.extend(expcreateParticles(x, y, num_particles = 8))
-
+        if event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_s:
+                shapes_to_add = []
+                shapes_to_remove = []
+                for i in range(len(physics.shapes) - 1, -1, -1):
+                    shape = physics.shapes[i]
+                    multiShape = shape.split(5)
+                    print("split!")
+                    for newShape in multiShape:
+                        shapes_to_add+=multiShape
+                    #print("new shapes: ", multiShape)
+                    shapes_to_remove.append(shape)
+                for shape in shapes_to_add:
+                    physics.shapes.append(shape)
+                for shape in shapes_to_remove:
+                    physics.shapes.remove(shape)
         if event.type == pygame.MOUSEBUTTONDOWN:
-            shapes_to_add = []
-            shapes_to_remove = []
-            for i in range(len(physics.shapes) - 1, -1, -1):
-                shape = physics.shapes[i]
-                multiShape = shape.split(5)
-                for newShape in multiShape:
-                    shapes_to_add+=multiShape
-                print("new shapes: ", multiShape)
-                shapes_to_remove.append(shape)
-            for shape in shapes_to_add:
-                physics.shapes.append(shape)
-            for shape in shapes_to_remove:
-                physics.shapes.remove(shape)
+                x,y=pygame.mouse.get_pos()
+                physics.shapes.append(createRandomPolygon(randomColor(),random.randint(3,7),10,x,y))
+                #physics.shapes.append(createRandomPolygon(randomColor(),3,10,x,y))
+                particles.extend(expcreateParticles(x, y, num_particles = 8))
+
+    if event.type == pygame.QUIT:
+        pygame.quit()
+        running = False
+        print("quit!")
+
+
+    # pygame.display.flip()
+    # c.tick(60)
+        #new shape
+
+    
   
             
 
 
-    # Update particles
-    particles = [particle for particle in particles if not particle.is_expired()]
-    for particle in particles:
-        particle.move()
+    # # Update particles
+    # particles = [particle for particle in particles if not particle.is_expired()]
+    # for particle in particles:
+    #     particle.move()
         
     #frame stuff
     if running:
